@@ -1,8 +1,5 @@
 CREATE TABLE "users" (
-  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "email" varchar PRIMARY KEY,
   "username" varchar NOT NULL,
-  "email" varchar UNIQUE NOT NULL,
   "password" varchar NOT NULL
 );
-
-CREATE INDEX ON "users" ("email");

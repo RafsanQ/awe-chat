@@ -2,21 +2,25 @@ package main
 
 import (
 	"log"
-	"server/db"
-	"server/internal/user"
-	"server/router"
+	"server/internal"
+	"server/util"
 )
 
 func main() {
-	dbConn, err := db.NewDatabase()
+	config, err := util.LoadConfig("./")
 	if err != nil {
-		log.Fatalf("Could not initialize database\n %s", err)
+		log.Fatalf("Failed to load config: %v", err)
+		return
 	}
 
-	userRepository := user.NewUserRepository(dbConn.GetDB())
-	userService := user.NewUserService(userRepository)
-	userHandler := user.NewUserHandler(userService)
+	server, err := internal.NewServer(&config)
+	if err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+		return
+	}
 
-	router.InitRouter(userHandler)
-	router.StartApp("0.0.0.0:8080")
+	err = server.Start(config.ServerAddress)
+	if err != nil {
+		log.Fatalf("Server on %s Crashed.\nError: %v", config.ServerAddress, err)
+	}
 }
