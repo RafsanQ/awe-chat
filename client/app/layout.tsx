@@ -1,7 +1,8 @@
+import "./globals.css";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ThemeProvider } from "./theme-provider";
-import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/custom-components/navbar.component";
 
 const geistSans = localFont({
@@ -36,8 +37,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Navbar />
-          {children}
+          <div className="flex flex-col h-screen">
+            <Navbar />
+            {children}
+            <Toaster />
+          </div>
         </ThemeProvider>
       </body>
     </html>
