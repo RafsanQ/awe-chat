@@ -17,7 +17,7 @@ func NewDatabase(ctx context.Context, source string) (*Database, error) {
 
 	conn, err := pgx.Connect(ctx, source)
 	if err != nil {
-		log.Fatal("Could not load configuration")
+		log.Fatal("Could not connect to the database")
 		return nil, err
 	}
 	queries := db.New(conn)

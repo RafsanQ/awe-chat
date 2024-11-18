@@ -7,6 +7,7 @@ type Config struct {
 	DBSource      string `mapstructure:"DB_SOURCE"`
 	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
 	SecretKey     string `mapstructure:"SECRET_KEY"`
+	ClientAddress string `mapstructure:"CLIENT_ADDRESS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
