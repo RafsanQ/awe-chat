@@ -3,7 +3,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import AsyncButton from "@/components/custom-components/async-button";
+import { createSession } from "@/app/lib/session";
+
 import {
   Form,
   FormControl,
@@ -12,6 +14,10 @@ import {
   FormLabel,
   FormMessage
 } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { API_URL } from "@/config";
+import { useState } from "react";
+
 const formSchema = z.object({
   email: z.string().email({
     message: "Invalid email format"
@@ -22,6 +28,8 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
+  const { toast } = useToast();
+  const [loadingState, setLoadingState] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -29,8 +37,47 @@ export default function LoginForm() {
       password: ""
     }
   });
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log({ values });
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setLoadingState(true);
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password
+        })
+      });
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: "Logged in.",
+          duration: 3000
+        });
+        const resData: {
+          token: string;
+          email: string;
+          username: string;
+        } = await res.json();
+        await createSession(resData.token);
+      } else {
+        const resData = await res.json();
+        throw new Error(resData.error || "Could not Login");
+      }
+      setLoadingState(false);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: error.message,
+          duration: 2000
+        });
+      }
+      setLoadingState(false);
+    }
   };
   return (
     <Form {...form}>
@@ -61,7 +108,7 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit">Login</Button>
+        <AsyncButton isLoading={loadingState} type="submit" text="Login" />
       </form>
     </Form>
   );

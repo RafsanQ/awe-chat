@@ -3,8 +3,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -14,8 +12,11 @@ import {
   FormLabel,
   FormMessage
 } from "@/components/ui/form";
+import { useRouter } from "next/navigation";
 import { API_URL } from "@/config";
 import { useState } from "react";
+import AsyncButton from "@/components/custom-components/async-button";
+
 const formSchema = z
   .object({
     email: z.string().email({
@@ -42,6 +43,7 @@ const formSchema = z
   });
 
 export default function RegisterForm() {
+  const router = useRouter();
   const { toast } = useToast();
   const [loadingState, setLoadingState] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -54,27 +56,36 @@ export default function RegisterForm() {
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoadingState(true);
-      console.log("here");
-      const response = await fetch(API_URL + "/signup", {
+      const res = await fetch(`${API_URL}/register`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           email: values.email,
           username: values.username,
           password: values.password
         })
       });
-      console.log({ response });
-      toast({
-        title: "Success",
-        description: "New User has been registered."
-      });
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: "New User has been registered.",
+          duration: 3000
+        });
+        router.push("/login");
+      } else {
+        const resData = await res.json();
+        throw new Error(resData.error || "Could not register the new User");
+      }
       setLoadingState(false);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast({
           variant: "destructive",
           title: "Uh oh! Something went wrong.",
-          description: error.message
+          description: error.message,
+          duration: 2000
         });
       }
       setLoadingState(false);
@@ -136,14 +147,7 @@ export default function RegisterForm() {
           )}
         />
 
-        {loadingState ? (
-          <Button disabled>
-            <Loader2 className="animate-spin" />
-            Please wait
-          </Button>
-        ) : (
-          <Button type="submit">Register</Button>
-        )}
+        <AsyncButton isLoading={loadingState} type="submit" text="Register" />
       </form>
     </Form>
   );
