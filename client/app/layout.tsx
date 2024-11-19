@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/custom-components/navbar.component";
+import AuthContextProvider from "@/modules/auth/util/auth-context-provider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,11 +38,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col h-screen">
-            <Navbar />
-            {children}
-            <Toaster />
-          </div>
+          <AuthContextProvider>
+            <div className="flex flex-col h-screen">
+              <Navbar />
+              {children}
+              <Toaster />
+            </div>
+          </AuthContextProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -26,6 +26,9 @@ DELETE FROM chat_accesses WHERE chat_id = $1 AND user_email = $2;
 -- name: GetChatAccessByUserId :many
 SELECT * FROM chat_accesses WHERE user_email = $1;
 
+-- name: GetChatAccessesByEmail :many
+SELECT * FROM chat_accesses WHERE user_email = $1;
+
 -- name: CreateMessage :one
 INSERT INTO messages (chat_id, sender_email, content) VALUES ($1, $2, $3)
 RETURNING *;

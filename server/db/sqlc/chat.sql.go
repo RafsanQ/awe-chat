@@ -24,9 +24,9 @@ func (q *Queries) CreateChat(ctx context.Context) (Chat, error) {
 }
 
 const createChatAccess = `-- name: CreateChatAccess :one
- INSERT INTO chat_accesses (chat_id, user_email, is_direct_message)
- VALUES ($1, $2, $3)
- RETURNING chat_id, user_email, is_direct_message
+INSERT INTO chat_accesses (chat_id, user_email, is_direct_message)
+VALUES ($1, $2, $3)
+RETURNING chat_id, user_email, is_direct_message
 `
 
 type CreateChatAccessParams struct {
@@ -116,6 +116,30 @@ SELECT chat_id, user_email, is_direct_message FROM chat_accesses WHERE user_emai
 
 func (q *Queries) GetChatAccessByUserId(ctx context.Context, userEmail string) ([]ChatAccess, error) {
 	rows, err := q.db.Query(ctx, getChatAccessByUserId, userEmail)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChatAccess
+	for rows.Next() {
+		var i ChatAccess
+		if err := rows.Scan(&i.ChatID, &i.UserEmail, &i.IsDirectMessage); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChatAccessesByEmail = `-- name: GetChatAccessesByEmail :many
+SELECT chat_id, user_email, is_direct_message FROM chat_accesses WHERE user_email = $1
+`
+
+func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) ([]ChatAccess, error) {
+	rows, err := q.db.Query(ctx, getChatAccessesByEmail, userEmail)
 	if err != nil {
 		return nil, err
 	}

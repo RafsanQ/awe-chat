@@ -40,10 +40,13 @@ func NewServer(config *util.Config) (*Server, error) {
 			return origin == config.ClientAddress
 		},
 	}))
+
 	// Routes here
 	router.POST("/signup", server.createUser)
 	router.POST("/login", server.login)
-	router.GET("/logout", server.logout)
+
+	authRoutes := router.Group("/").Use(authMiddleWare())
+	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
 
 	server.router = router
 	return server, nil

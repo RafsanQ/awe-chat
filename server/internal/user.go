@@ -110,3 +110,58 @@ func (server *Server) logout(ctx *gin.Context) {
 	ctx.SetCookie("jwt", "", -1, "", "", false, true)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
+
+type requestFriendConnectionRequest struct {
+	FriendEmail string `json:"friend_email" binding:"required,email"`
+	UserEmail   string `json:"user_email" binding:"required,email"`
+}
+
+func (server *Server) requestFriendConnection(ctx *gin.Context) {
+	// TODO: Implement request friend connection logic
+
+	var req requestFriendConnectionRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	arg := db.RequestFriendConnectionParams{
+		UserEmailFrom: req.UserEmail,
+		UserEmailTo:   req.FriendEmail,
+	}
+
+	errorChannel := make(chan error)
+
+	go func() {
+		_, err := server.database.Queries.GetUserByEmail(ctx, arg.UserEmailFrom)
+		errorChannel <- err
+	}()
+
+	go func() {
+		_, err := server.database.Queries.GetUserByEmail(ctx, arg.UserEmailTo)
+		errorChannel <- err
+	}()
+
+	var err error
+	for i := 0; i < 2; i++ {
+		if r := <-errorChannel; r != nil {
+			err = r
+		}
+	}
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, errorResponse(err))
+		return
+	}
+
+	err = server.database.Queries.RequestFriendConnection(ctx, arg)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Friend Request Sent",
+	})
+
+}

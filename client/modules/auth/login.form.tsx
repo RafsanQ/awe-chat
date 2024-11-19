@@ -4,8 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import AsyncButton from "@/components/custom-components/async-button";
-import { createSession } from "@/app/lib/session";
-
 import {
   Form,
   FormControl,
@@ -16,7 +14,9 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AuthContext } from "./util/auth-context-provider";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,8 +28,17 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
+  const router = useRouter();
   const { toast } = useToast();
   const [loadingState, setLoadingState] = useState(false);
+  const { authenticated } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (authenticated) {
+      router.replace("/dashboard");
+    }
+  }, [authenticated, router]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,6 +46,7 @@ export default function LoginForm() {
       password: ""
     }
   });
+
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoadingState(true);
@@ -50,23 +60,32 @@ export default function LoginForm() {
           password: values.password
         })
       });
+
       if (res.ok) {
         toast({
           title: "Success",
           description: "Logged in.",
           duration: 3000
         });
-        const resData: {
+        const user: {
           token: string;
           email: string;
           username: string;
         } = await res.json();
-        await createSession(resData.token);
+
+        sessionStorage.setItem(
+          "user_info",
+          JSON.stringify({
+            email: user.email,
+            username: user.username
+          })
+        );
+        setLoadingState(false);
+        return router.push("/dashboard");
       } else {
         const resData = await res.json();
         throw new Error(resData.error || "Could not Login");
       }
-      setLoadingState(false);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast({

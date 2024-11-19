@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/config";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import AsyncButton from "@/components/custom-components/async-button";
+import { AuthContext } from "./util/auth-context-provider";
 
 const formSchema = z
   .object({
@@ -46,6 +47,13 @@ export default function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [loadingState, setLoadingState] = useState(false);
+  const { authenticated } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (authenticated) {
+      router.replace("/dashboard");
+    }
+  }, [authenticated, router]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
