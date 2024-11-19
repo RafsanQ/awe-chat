@@ -1,1 +1,6 @@
+DROP TABLE IF EXISTS chat_lines;
+DROP TABLE IF EXISTS friend_connections;
+DROP TABLE IF EXISTS chat_accesses;
+DROP TABLE IF EXISTS chats;
 DROP TABLE IF EXISTS users;
+

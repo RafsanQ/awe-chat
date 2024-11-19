@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"net/http"
 	db "server/db/sqlc"
 	"server/util"
@@ -76,7 +77,7 @@ func (server *Server) login(ctx *gin.Context) {
 
 	err = util.CheckPassword(user.Password, req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("Invalid password")))
 		return
 	}
 
