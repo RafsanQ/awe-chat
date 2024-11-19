@@ -125,6 +125,11 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 		return
 	}
 
+	if req.FriendEmail == req.UserEmail {
+		ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("Cannot request friend connection with yourself")))
+		return
+	}
+
 	arg := db.RequestFriendConnectionParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
