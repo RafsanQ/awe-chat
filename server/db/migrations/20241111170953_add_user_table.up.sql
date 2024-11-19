@@ -13,7 +13,7 @@ CREATE TABLE "chat_accesses" (
 CREATE TABLE "friend_connections" (
   "user_email_from" varchar NOT NULL,
   "user_email_to" varchar NOT NULL,
-  "status" varchar NOT NULL
+  "confirmed" bool NOT NULL DEFAULT false
 );
 
 CREATE TABLE "chats" (
@@ -21,11 +21,11 @@ CREATE TABLE "chats" (
   "admin_email" varchar
 );
 
-CREATE TABLE "chat_lines" (
+CREATE TABLE "messages" (
   "id" bigint PRIMARY KEY NOT NULL,
   "chat_id" uuid NOT NULL,
-  "text" text NOT NULL,
-  "written_by" varchar NOT NULL,
+  "content" text NOT NULL,
+  "sender_email" varchar NOT NULL,
   "created_at" timestamp NOT NULL
 );
 
@@ -33,22 +33,18 @@ CREATE INDEX ON "chat_accesses" ("user_email");
 
 CREATE UNIQUE INDEX ON "friend_connections" ("user_email_from", "user_email_to");
 
-CREATE INDEX ON "friend_connections" ("status");
+CREATE INDEX ON "messages" ("chat_id");
 
-CREATE INDEX ON "chat_lines" ("chat_id");
-
-CREATE INDEX ON "chat_lines" ("written_by");
-
-ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id");
+ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id") ON DELETE CASCADE;
 
 ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("user_email") REFERENCES "users" ("email");
 
-ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_from") REFERENCES "users" ("email");
+ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_from") REFERENCES "users" ("email") ON DELETE CASCADE;
 
-ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_to") REFERENCES "users" ("email");
+ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_to") REFERENCES "users" ("email") ON DELETE CASCADE;
 
 ALTER TABLE "chats" ADD FOREIGN KEY ("admin_email") REFERENCES "users" ("email");
 
-ALTER TABLE "chat_lines" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id");
+ALTER TABLE "messages" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "chat_lines" ADD FOREIGN KEY ("written_by") REFERENCES "users" ("email");
+ALTER TABLE "messages" ADD FOREIGN KEY ("sender_email") REFERENCES "users" ("email") ON DELETE CASCADE;

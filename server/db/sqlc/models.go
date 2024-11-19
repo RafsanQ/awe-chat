@@ -4,6 +4,35 @@
 
 package db
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type Chat struct {
+	ID         pgtype.UUID `json:"id"`
+	AdminEmail pgtype.Text `json:"admin_email"`
+}
+
+type ChatAccess struct {
+	ChatID          pgtype.UUID `json:"chat_id"`
+	UserEmail       string      `json:"user_email"`
+	IsDirectMessage bool        `json:"is_direct_message"`
+}
+
+type FriendConnection struct {
+	UserEmailFrom string `json:"user_email_from"`
+	UserEmailTo   string `json:"user_email_to"`
+	Confirmed     bool   `json:"confirmed"`
+}
+
+type Message struct {
+	ID          int64            `json:"id"`
+	ChatID      pgtype.UUID      `json:"chat_id"`
+	Content     string           `json:"content"`
+	SenderEmail string           `json:"sender_email"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+}
+
 type User struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
