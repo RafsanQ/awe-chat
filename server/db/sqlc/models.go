@@ -9,14 +9,14 @@ import (
 )
 
 type Chat struct {
-	ID         pgtype.UUID `json:"id"`
-	AdminEmail pgtype.Text `json:"admin_email"`
+	ID          pgtype.UUID `json:"id"`
+	AdminEmail  pgtype.Text `json:"admin_email"`
+	IsGroupChat bool        `json:"is_group_chat"`
 }
 
 type ChatAccess struct {
-	ChatID          pgtype.UUID `json:"chat_id"`
-	UserEmail       string      `json:"user_email"`
-	IsDirectMessage bool        `json:"is_direct_message"`
+	ChatID    pgtype.UUID `json:"chat_id"`
+	UserEmail string      `json:"user_email"`
 }
 
 type FriendConnection struct {

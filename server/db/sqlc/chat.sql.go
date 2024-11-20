@@ -11,62 +11,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createChat = `-- name: CreateChat :one
-INSERT INTO chats DEFAULT VALUES
-RETURNING id, admin_email
-`
-
-func (q *Queries) CreateChat(ctx context.Context) (Chat, error) {
-	row := q.db.QueryRow(ctx, createChat)
-	var i Chat
-	err := row.Scan(&i.ID, &i.AdminEmail)
-	return i, err
-}
-
-const createChatAccess = `-- name: CreateChatAccess :one
-INSERT INTO chat_accesses (chat_id, user_email, is_direct_message)
-VALUES ($1, $2, $3)
-RETURNING chat_id, user_email, is_direct_message
-`
-
-type CreateChatAccessParams struct {
-	ChatID          pgtype.UUID `json:"chat_id"`
-	UserEmail       string      `json:"user_email"`
-	IsDirectMessage bool        `json:"is_direct_message"`
-}
-
-func (q *Queries) CreateChatAccess(ctx context.Context, arg CreateChatAccessParams) (ChatAccess, error) {
-	row := q.db.QueryRow(ctx, createChatAccess, arg.ChatID, arg.UserEmail, arg.IsDirectMessage)
-	var i ChatAccess
-	err := row.Scan(&i.ChatID, &i.UserEmail, &i.IsDirectMessage)
-	return i, err
-}
-
-const createChatWithAdmin = `-- name: CreateChatWithAdmin :one
-INSERT INTO chats (admin_email) VALUES ($1)
-RETURNING id, admin_email
-`
-
-func (q *Queries) CreateChatWithAdmin(ctx context.Context, adminEmail pgtype.Text) (Chat, error) {
-	row := q.db.QueryRow(ctx, createChatWithAdmin, adminEmail)
-	var i Chat
-	err := row.Scan(&i.ID, &i.AdminEmail)
-	return i, err
-}
-
-const createMessage = `-- name: CreateMessage :one
+const addMessage = `-- name: AddMessage :one
 INSERT INTO messages (chat_id, sender_email, content) VALUES ($1, $2, $3)
 RETURNING id, chat_id, content, sender_email, created_at
 `
 
-type CreateMessageParams struct {
+type AddMessageParams struct {
 	ChatID      pgtype.UUID `json:"chat_id"`
 	SenderEmail string      `json:"sender_email"`
 	Content     string      `json:"content"`
 }
 
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, createMessage, arg.ChatID, arg.SenderEmail, arg.Content)
+func (q *Queries) AddMessage(ctx context.Context, arg AddMessageParams) (Message, error) {
+	row := q.db.QueryRow(ctx, addMessage, arg.ChatID, arg.SenderEmail, arg.Content)
 	var i Message
 	err := row.Scan(
 		&i.ID,
@@ -75,6 +32,47 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 		&i.SenderEmail,
 		&i.CreatedAt,
 	)
+	return i, err
+}
+
+const createChat = `-- name: CreateChat :one
+INSERT INTO chats DEFAULT VALUES
+RETURNING id, admin_email, is_group_chat
+`
+
+func (q *Queries) CreateChat(ctx context.Context) (Chat, error) {
+	row := q.db.QueryRow(ctx, createChat)
+	var i Chat
+	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
+	return i, err
+}
+
+const createChatAccess = `-- name: CreateChatAccess :one
+INSERT INTO chat_accesses (chat_id, user_email) VALUES ($1, $2)
+RETURNING chat_id, user_email
+`
+
+type CreateChatAccessParams struct {
+	ChatID    pgtype.UUID `json:"chat_id"`
+	UserEmail string      `json:"user_email"`
+}
+
+func (q *Queries) CreateChatAccess(ctx context.Context, arg CreateChatAccessParams) (ChatAccess, error) {
+	row := q.db.QueryRow(ctx, createChatAccess, arg.ChatID, arg.UserEmail)
+	var i ChatAccess
+	err := row.Scan(&i.ChatID, &i.UserEmail)
+	return i, err
+}
+
+const createChatWithAdmin = `-- name: CreateChatWithAdmin :one
+INSERT INTO chats (admin_email) VALUES ($1)
+RETURNING id, admin_email, is_group_chat
+`
+
+func (q *Queries) CreateChatWithAdmin(ctx context.Context, adminEmail pgtype.Text) (Chat, error) {
+	row := q.db.QueryRow(ctx, createChatWithAdmin, adminEmail)
+	var i Chat
+	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
 }
 
@@ -110,32 +108,8 @@ func (q *Queries) DeleteMessage(ctx context.Context, id int64) error {
 	return err
 }
 
-const getChatAccessByUserId = `-- name: GetChatAccessByUserId :many
-SELECT chat_id, user_email, is_direct_message FROM chat_accesses WHERE user_email = $1
-`
-
-func (q *Queries) GetChatAccessByUserId(ctx context.Context, userEmail string) ([]ChatAccess, error) {
-	rows, err := q.db.Query(ctx, getChatAccessByUserId, userEmail)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ChatAccess
-	for rows.Next() {
-		var i ChatAccess
-		if err := rows.Scan(&i.ChatID, &i.UserEmail, &i.IsDirectMessage); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getChatAccessesByEmail = `-- name: GetChatAccessesByEmail :many
-SELECT chat_id, user_email, is_direct_message FROM chat_accesses WHERE user_email = $1
+SELECT chat_id, user_email FROM chat_accesses WHERE user_email = $1
 `
 
 func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) ([]ChatAccess, error) {
@@ -147,7 +121,7 @@ func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) 
 	var items []ChatAccess
 	for rows.Next() {
 		var i ChatAccess
-		if err := rows.Scan(&i.ChatID, &i.UserEmail, &i.IsDirectMessage); err != nil {
+		if err := rows.Scan(&i.ChatID, &i.UserEmail); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -159,43 +133,58 @@ func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) 
 }
 
 const getChatById = `-- name: GetChatById :one
-SELECT id, admin_email FROM chats WHERE id = $1 LIMIT 1
+SELECT id, admin_email, is_group_chat FROM chats WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetChatById(ctx context.Context, id pgtype.UUID) (Chat, error) {
 	row := q.db.QueryRow(ctx, getChatById, id)
 	var i Chat
-	err := row.Scan(&i.ID, &i.AdminEmail)
+	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
 }
 
-const getMessagesByChatId = `-- name: GetMessagesByChatId :one
+const getMessagesByChatId = `-- name: GetMessagesByChatId :many
 SELECT id, chat_id, content, sender_email, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC
 `
 
-func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) (Message, error) {
-	row := q.db.QueryRow(ctx, getMessagesByChatId, chatID)
-	var i Message
-	err := row.Scan(
-		&i.ID,
-		&i.ChatID,
-		&i.Content,
-		&i.SenderEmail,
-		&i.CreatedAt,
-	)
-	return i, err
+func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) ([]Message, error) {
+	rows, err := q.db.Query(ctx, getMessagesByChatId, chatID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Message
+	for rows.Next() {
+		var i Message
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChatID,
+			&i.Content,
+			&i.SenderEmail,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateChat = `-- name: UpdateChat :exec
-UPDATE chats SET admin_email = $2 WHERE id = $1
+UPDATE chats SET admin_email = $2, is_group_chat = $3
+WHERE id = $1
 `
 
 type UpdateChatParams struct {
-	ID         pgtype.UUID `json:"id"`
-	AdminEmail pgtype.Text `json:"admin_email"`
+	ID          pgtype.UUID `json:"id"`
+	AdminEmail  pgtype.Text `json:"admin_email"`
+	IsGroupChat bool        `json:"is_group_chat"`
 }
 
 func (q *Queries) UpdateChat(ctx context.Context, arg UpdateChatParams) error {
-	_, err := q.db.Exec(ctx, updateChat, arg.ID, arg.AdminEmail)
+	_, err := q.db.Exec(ctx, updateChat, arg.ID, arg.AdminEmail, arg.IsGroupChat)
 	return err
 }
