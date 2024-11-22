@@ -65,6 +65,35 @@ func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
 	return err
 }
 
+const getFriendConnections = `-- name: GetFriendConnections :many
+SELECT user_email_from, user_email_to, confirmed FROM friend_connections WHERE (user_email_from = $1 AND user_email_to = $2) OR (user_email_from = $2 AND user_email_to = $1)
+`
+
+type GetFriendConnectionsParams struct {
+	UserEmailFrom string `json:"user_email_from"`
+	UserEmailTo   string `json:"user_email_to"`
+}
+
+func (q *Queries) GetFriendConnections(ctx context.Context, arg GetFriendConnectionsParams) ([]FriendConnection, error) {
+	rows, err := q.db.Query(ctx, getFriendConnections, arg.UserEmailFrom, arg.UserEmailTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FriendConnection
+	for rows.Next() {
+		var i FriendConnection
+		if err := rows.Scan(&i.UserEmailFrom, &i.UserEmailTo, &i.Confirmed); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT email, username, password FROM users WHERE email = $1 LIMIT 1
 `

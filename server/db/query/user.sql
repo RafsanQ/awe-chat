@@ -18,3 +18,5 @@ UPDATE friend_connections SET confirmed = true WHERE user_email_from = $1 AND us
 -- name: DeleteFriendConnection :exec
 DELETE FROM friend_connections WHERE user_email_from = $1 AND user_email_to = $2;
 
+-- name: GetFriendConnections :many
+SELECT * FROM friend_connections WHERE (user_email_from = $1 AND user_email_to = $2) OR (user_email_from = $2 AND user_email_to = $1);

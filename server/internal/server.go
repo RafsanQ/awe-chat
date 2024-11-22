@@ -49,6 +49,7 @@ func NewServer(config *util.Config) (*Server, error) {
 
 	authRoutes := router.Group("/").Use(authMiddleWare(config.SecretKey))
 	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
+	authRoutes.GET("/accept-friend-request", server.acceptFriendConnection)
 
 	server.router = router
 	return server, nil
