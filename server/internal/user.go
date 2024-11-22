@@ -97,7 +97,7 @@ func (server *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.SetCookie("jwt", signedString, 3600, "/", "localhost", false, true)
+	ctx.SetCookie("jwt", signedString, 3600, "/", "localhost", true, true)
 
 	ctx.JSON(http.StatusOK, &loginUserResponse{
 		Username: user.Username,

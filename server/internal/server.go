@@ -29,6 +29,8 @@ func NewServer(config *util.Config) (*Server, error) {
 
 	router := gin.Default()
 
+	router.Use(ginBodyLogMiddleware)
+
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{config.ClientAddress},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
@@ -42,10 +44,10 @@ func NewServer(config *util.Config) (*Server, error) {
 	}))
 
 	// Routes here
-	router.POST("/signup", server.createUser)
+	router.POST("/register", server.createUser)
 	router.POST("/login", server.login)
 
-	authRoutes := router.Group("/").Use(authMiddleWare())
+	authRoutes := router.Group("/").Use(authMiddleWare(config.SecretKey))
 	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
 
 	server.router = router
