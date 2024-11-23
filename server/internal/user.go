@@ -186,7 +186,11 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Friend Request Sent",
 	})
@@ -261,8 +265,12 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Friend Request Sent",
+		"message": "Friend Request Accepted",
 	})
 }
