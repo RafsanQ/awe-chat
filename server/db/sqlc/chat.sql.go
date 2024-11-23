@@ -22,8 +22,8 @@ type AddMessageParams struct {
 	Content     string      `json:"content"`
 }
 
-func (q *Queries) AddMessage(ctx context.Context, arg AddMessageParams) (Message, error) {
-	row := q.db.QueryRow(ctx, addMessage, arg.ChatID, arg.SenderEmail, arg.Content)
+func (q *Queries) AddMessage(ctx context.Context, db DBTX, arg AddMessageParams) (Message, error) {
+	row := db.QueryRow(ctx, addMessage, arg.ChatID, arg.SenderEmail, arg.Content)
 	var i Message
 	err := row.Scan(
 		&i.ID,
@@ -40,8 +40,8 @@ INSERT INTO chats DEFAULT VALUES
 RETURNING id, admin_email, is_group_chat
 `
 
-func (q *Queries) CreateChat(ctx context.Context) (Chat, error) {
-	row := q.db.QueryRow(ctx, createChat)
+func (q *Queries) CreateChat(ctx context.Context, db DBTX) (Chat, error) {
+	row := db.QueryRow(ctx, createChat)
 	var i Chat
 	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
@@ -57,8 +57,8 @@ type CreateChatAccessParams struct {
 	UserEmail string      `json:"user_email"`
 }
 
-func (q *Queries) CreateChatAccess(ctx context.Context, arg CreateChatAccessParams) (ChatAccess, error) {
-	row := q.db.QueryRow(ctx, createChatAccess, arg.ChatID, arg.UserEmail)
+func (q *Queries) CreateChatAccess(ctx context.Context, db DBTX, arg CreateChatAccessParams) (ChatAccess, error) {
+	row := db.QueryRow(ctx, createChatAccess, arg.ChatID, arg.UserEmail)
 	var i ChatAccess
 	err := row.Scan(&i.ChatID, &i.UserEmail)
 	return i, err
@@ -69,8 +69,8 @@ INSERT INTO chats (admin_email) VALUES ($1)
 RETURNING id, admin_email, is_group_chat
 `
 
-func (q *Queries) CreateChatWithAdmin(ctx context.Context, adminEmail pgtype.Text) (Chat, error) {
-	row := q.db.QueryRow(ctx, createChatWithAdmin, adminEmail)
+func (q *Queries) CreateChatWithAdmin(ctx context.Context, db DBTX, adminEmail pgtype.Text) (Chat, error) {
+	row := db.QueryRow(ctx, createChatWithAdmin, adminEmail)
 	var i Chat
 	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
@@ -85,8 +85,8 @@ type DeleteChatAccessParams struct {
 	UserEmail string      `json:"user_email"`
 }
 
-func (q *Queries) DeleteChatAccess(ctx context.Context, arg DeleteChatAccessParams) error {
-	_, err := q.db.Exec(ctx, deleteChatAccess, arg.ChatID, arg.UserEmail)
+func (q *Queries) DeleteChatAccess(ctx context.Context, db DBTX, arg DeleteChatAccessParams) error {
+	_, err := db.Exec(ctx, deleteChatAccess, arg.ChatID, arg.UserEmail)
 	return err
 }
 
@@ -94,8 +94,8 @@ const deleteChatById = `-- name: DeleteChatById :exec
 DELETE FROM chats WHERE id = $1
 `
 
-func (q *Queries) DeleteChatById(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteChatById, id)
+func (q *Queries) DeleteChatById(ctx context.Context, db DBTX, id pgtype.UUID) error {
+	_, err := db.Exec(ctx, deleteChatById, id)
 	return err
 }
 
@@ -103,8 +103,8 @@ const deleteMessage = `-- name: DeleteMessage :exec
 DELETE FROM messages WHERE id = $1
 `
 
-func (q *Queries) DeleteMessage(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteMessage, id)
+func (q *Queries) DeleteMessage(ctx context.Context, db DBTX, id int64) error {
+	_, err := db.Exec(ctx, deleteMessage, id)
 	return err
 }
 
@@ -112,8 +112,8 @@ const getChatAccessesByEmail = `-- name: GetChatAccessesByEmail :many
 SELECT chat_id, user_email FROM chat_accesses WHERE user_email = $1
 `
 
-func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) ([]ChatAccess, error) {
-	rows, err := q.db.Query(ctx, getChatAccessesByEmail, userEmail)
+func (q *Queries) GetChatAccessesByEmail(ctx context.Context, db DBTX, userEmail string) ([]ChatAccess, error) {
+	rows, err := db.Query(ctx, getChatAccessesByEmail, userEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +136,8 @@ const getChatById = `-- name: GetChatById :one
 SELECT id, admin_email, is_group_chat FROM chats WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetChatById(ctx context.Context, id pgtype.UUID) (Chat, error) {
-	row := q.db.QueryRow(ctx, getChatById, id)
+func (q *Queries) GetChatById(ctx context.Context, db DBTX, id pgtype.UUID) (Chat, error) {
+	row := db.QueryRow(ctx, getChatById, id)
 	var i Chat
 	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
@@ -147,8 +147,8 @@ const getMessagesByChatId = `-- name: GetMessagesByChatId :many
 SELECT id, chat_id, content, sender_email, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC
 `
 
-func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) ([]Message, error) {
-	rows, err := q.db.Query(ctx, getMessagesByChatId, chatID)
+func (q *Queries) GetMessagesByChatId(ctx context.Context, db DBTX, chatID pgtype.UUID) ([]Message, error) {
+	rows, err := db.Query(ctx, getMessagesByChatId, chatID)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ type UpdateChatParams struct {
 	IsGroupChat bool        `json:"is_group_chat"`
 }
 
-func (q *Queries) UpdateChat(ctx context.Context, arg UpdateChatParams) error {
-	_, err := q.db.Exec(ctx, updateChat, arg.ID, arg.AdminEmail, arg.IsGroupChat)
+func (q *Queries) UpdateChat(ctx context.Context, db DBTX, arg UpdateChatParams) error {
+	_, err := db.Exec(ctx, updateChat, arg.ID, arg.AdminEmail, arg.IsGroupChat)
 	return err
 }

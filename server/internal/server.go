@@ -3,29 +3,31 @@ package internal
 import (
 	"context"
 	"log"
-	"server/db"
+	db "server/db/sqlc"
 	"server/util"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
-	database *db.Database
-	router   *gin.Engine
-	config   *util.Config
+	databaseConnection *pgxpool.Pool
+	databaseQueries    *db.Queries
+	router             *gin.Engine
+	config             *util.Config
 }
 
 func NewServer(config *util.Config) (*Server, error) {
 
-	database, err := db.NewDatabase(context.Background(), config.DBSource)
+	databaseConnection, databaseQueries, err := NewDatabase(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatalf("Could not initialize database\n %s", err)
 		return nil, err
 	}
 
-	server := &Server{database: database, config: config}
+	server := &Server{databaseConnection: databaseConnection, databaseQueries: databaseQueries, config: config}
 
 	router := gin.Default()
 

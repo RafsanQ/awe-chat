@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	db "server/db/sqlc"
 	"server/util"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -38,7 +40,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		Password: hashedPassword,
 	}
 
-	user, err := server.database.Queries.CreateUser(ctx, arg)
+	user, err := server.databaseQueries.CreateUser(ctx, server.databaseConnection, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -70,7 +72,7 @@ func (server *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := server.database.Queries.GetUserByEmail(ctx, req.Email)
+	user, err := server.databaseQueries.GetUserByEmail(ctx, server.databaseConnection, req.Email)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, errorResponse(err))
 		return
@@ -132,17 +134,17 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(func() (err error) {
-		_, err = server.database.Queries.GetUserByEmail(ctx, req.UserEmail)
+		_, err = server.databaseQueries.GetUserByEmail(ctx, server.databaseConnection, req.UserEmail)
 		return err
 	})
 
 	g.Go(func() (err error) {
-		_, err = server.database.Queries.GetUserByEmail(ctx, req.FriendEmail)
+		_, err = server.databaseQueries.GetUserByEmail(ctx, server.databaseConnection, req.FriendEmail)
 		return err
 	})
 
 	g.Go(func() (err error) {
-		res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+		res, _ := server.databaseQueries.GetFriendConnections(ctx, server.databaseConnection, db.GetFriendConnectionsParams{
 			UserEmailFrom: req.UserEmail,
 			UserEmailTo:   req.FriendEmail,
 		})
@@ -158,35 +160,53 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 	}
 
 	// Transaction
-	tx, err := server.database.GetConnection().Begin(ctx)
+	tx, err := server.databaseConnection.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
-	qtx := server.database.Queries.WithTx(tx)
-	err = qtx.RequestFriendConnection(ctx, db.RequestFriendConnectionParams{
-		UserEmailFrom: req.FriendEmail,
-		UserEmailTo:   req.UserEmail,
+	g, _ = errgroup.WithContext(ctx)
+
+	g.Go(func() (err error) {
+
+		// err = server.databaseQueries.RequestFriendConnection(ctx, tx, db.RequestFriendConnectionParams{
+		// 	UserEmailFrom: req.FriendEmail,
+		// 	UserEmailTo:   req.UserEmail,
+		// })
+		_, err = server.databaseQueries.GetUserByEmail(ctx, tx, req.UserEmail)
+		if err != nil {
+			fmt.Println("at 1", err.Error())
+		}
+		return err
 	})
 
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
+	g.Go(func() (err error) {
 
-	err = qtx.RequestFriendConnection(ctx, db.RequestFriendConnectionParams{
-		UserEmailFrom: req.UserEmail,
-		UserEmailTo:   req.FriendEmail,
+		// err = server.databaseQueries.RequestFriendConnection(ctx, tx, db.RequestFriendConnectionParams{
+		// 	UserEmailFrom: req.UserEmail,
+		// 	UserEmailTo:   req.FriendEmail,
+		// })
+		_, err = server.databaseQueries.GetUserByEmail(ctx, tx, req.FriendEmail)
+		if err != nil {
+			fmt.Println("at 2", err.Error())
+		}
+		return err
 	})
 
-	if err != nil {
+	if err := g.Wait(); err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	tx.Commit(ctx)
+	err = tx.Commit(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Friend Request Sent",
 	})
@@ -207,17 +227,17 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(func() (err error) {
-		_, err = server.database.Queries.GetUserByEmail(ctx, req.UserEmail)
+		_, err = server.databaseQueries.GetUserByEmail(ctx, server.databaseConnection, req.UserEmail)
 		return err
 	})
 
 	g.Go(func() (err error) {
-		_, err = server.database.Queries.GetUserByEmail(ctx, req.FriendEmail)
+		_, err = server.databaseQueries.GetUserByEmail(ctx, server.databaseConnection, req.FriendEmail)
 		return err
 	})
 
 	g.Go(func() (err error) {
-		res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+		res, _ := server.databaseQueries.GetFriendConnections(ctx, server.databaseConnection, db.GetFriendConnectionsParams{
 			UserEmailFrom: req.UserEmail,
 			UserEmailTo:   req.FriendEmail,
 		})
@@ -233,15 +253,14 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	}
 
 	// Transaction
-	tx, err := server.database.GetConnection().Begin(ctx)
+	tx, err := server.databaseConnection.Begin(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 	defer tx.Rollback(ctx)
 
-	qtx := server.database.Queries.WithTx(tx)
-	err = qtx.ConfirmFriendConnection(ctx, db.ConfirmFriendConnectionParams{
+	err = server.databaseQueries.ConfirmFriendConnection(ctx, tx, db.ConfirmFriendConnectionParams{
 		UserEmailFrom: req.FriendEmail,
 		UserEmailTo:   req.UserEmail,
 	})
@@ -251,7 +270,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	err = qtx.ConfirmFriendConnection(ctx, db.ConfirmFriendConnectionParams{
+	err = server.databaseQueries.ConfirmFriendConnection(ctx, tx, db.ConfirmFriendConnectionParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
 	})
@@ -262,6 +281,10 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	}
 
 	tx.Commit(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Friend Request Sent",
 	})

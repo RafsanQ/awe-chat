@@ -18,8 +18,8 @@ type ConfirmFriendConnectionParams struct {
 	UserEmailTo   string `json:"user_email_to"`
 }
 
-func (q *Queries) ConfirmFriendConnection(ctx context.Context, arg ConfirmFriendConnectionParams) error {
-	_, err := q.db.Exec(ctx, confirmFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
+func (q *Queries) ConfirmFriendConnection(ctx context.Context, db DBTX, arg ConfirmFriendConnectionParams) error {
+	_, err := db.Exec(ctx, confirmFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
 	return err
 }
 
@@ -35,8 +35,8 @@ type CreateUserParams struct {
 	Password string `json:"password"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.Username, arg.Password)
+func (q *Queries) CreateUser(ctx context.Context, db DBTX, arg CreateUserParams) (User, error) {
+	row := db.QueryRow(ctx, createUser, arg.Email, arg.Username, arg.Password)
 	var i User
 	err := row.Scan(&i.Email, &i.Username, &i.Password)
 	return i, err
@@ -51,8 +51,8 @@ type DeleteFriendConnectionParams struct {
 	UserEmailTo   string `json:"user_email_to"`
 }
 
-func (q *Queries) DeleteFriendConnection(ctx context.Context, arg DeleteFriendConnectionParams) error {
-	_, err := q.db.Exec(ctx, deleteFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
+func (q *Queries) DeleteFriendConnection(ctx context.Context, db DBTX, arg DeleteFriendConnectionParams) error {
+	_, err := db.Exec(ctx, deleteFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
 	return err
 }
 
@@ -60,8 +60,8 @@ const deleteUserByEmail = `-- name: DeleteUserByEmail :exec
 DELETE FROM users WHERE email = $1
 `
 
-func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
-	_, err := q.db.Exec(ctx, deleteUserByEmail, email)
+func (q *Queries) DeleteUserByEmail(ctx context.Context, db DBTX, email string) error {
+	_, err := db.Exec(ctx, deleteUserByEmail, email)
 	return err
 }
 
@@ -74,8 +74,8 @@ type GetFriendConnectionsParams struct {
 	UserEmailTo   string `json:"user_email_to"`
 }
 
-func (q *Queries) GetFriendConnections(ctx context.Context, arg GetFriendConnectionsParams) ([]FriendConnection, error) {
-	rows, err := q.db.Query(ctx, getFriendConnections, arg.UserEmailFrom, arg.UserEmailTo)
+func (q *Queries) GetFriendConnections(ctx context.Context, db DBTX, arg GetFriendConnectionsParams) ([]FriendConnection, error) {
+	rows, err := db.Query(ctx, getFriendConnections, arg.UserEmailFrom, arg.UserEmailTo)
 	if err != nil {
 		return nil, err
 	}
@@ -98,8 +98,8 @@ const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT email, username, password FROM users WHERE email = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByEmail, email)
+func (q *Queries) GetUserByEmail(ctx context.Context, db DBTX, email string) (User, error) {
+	row := db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(&i.Email, &i.Username, &i.Password)
 	return i, err
@@ -114,7 +114,7 @@ type RequestFriendConnectionParams struct {
 	UserEmailTo   string `json:"user_email_to"`
 }
 
-func (q *Queries) RequestFriendConnection(ctx context.Context, arg RequestFriendConnectionParams) error {
-	_, err := q.db.Exec(ctx, requestFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
+func (q *Queries) RequestFriendConnection(ctx context.Context, db DBTX, arg RequestFriendConnectionParams) error {
+	_, err := db.Exec(ctx, requestFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
 	return err
 }

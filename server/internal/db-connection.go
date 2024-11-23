@@ -1,4 +1,4 @@
-package db
+package internal
 
 import (
 	"context"
@@ -32,26 +32,12 @@ func Config(source string) *pgxpool.Config {
 	return dbConfig
 }
 
-type Database struct {
-	Queries        *db.Queries
-	connectionPool *pgxpool.Pool
-}
-
-func NewDatabase(ctx context.Context, source string) (*Database, error) {
-
+func NewDatabase(ctx context.Context, source string) (*pgxpool.Pool, *db.Queries, error) {
 	conn, err := pgxpool.NewWithConfig(ctx, Config(source))
 	if err != nil {
 		log.Fatal("Could not connect to the database")
-		return nil, err
+		return nil, nil, err
 	}
-	queries := db.New(conn)
-	return &Database{connectionPool: conn, Queries: queries}, nil
-}
-
-func (databaseInstance *Database) Close(ctx context.Context) {
-	databaseInstance.connectionPool.Close()
-}
-
-func (databaseInstance *Database) GetConnection() *pgxpool.Pool {
-	return databaseInstance.connectionPool
+	queries := db.New()
+	return conn, queries, nil
 }
