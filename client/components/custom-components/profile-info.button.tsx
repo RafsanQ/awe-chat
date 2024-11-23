@@ -6,32 +6,38 @@ import {
   MenubarMenu,
   MenubarTrigger
 } from "@/components/ui/menubar";
-import { AuthContext } from "@/modules/auth/util/auth-context-provider";
-import { useContext } from "react";
-import { useRouter } from "next/navigation";
+import { deleteCookie } from "cookies-next";
+import { useEffect, useState } from "react";
 
 export default function ProfileInfoButton() {
-  const router = useRouter();
-  const { authenticated, user, setAuthenticated } = useContext(AuthContext);
-
-  if (!authenticated) {
-    return null; // Return early if user is not authenticated.
-  }
-
+  const [userInfo, setUserInfo] = useState<{
+    username: string;
+    email: string;
+  } | null>(null);
   const handleLogOut = () => {
-    setAuthenticated(false);
-    router.replace("/login");
+    sessionStorage.removeItem("user_info");
+    deleteCookie("jwt");
+    window.location.replace("/auth/login");
   };
+
+  useEffect(() => {
+    setUserInfo(JSON.parse(sessionStorage.getItem("user_info") || "{}"));
+  }, []);
+
   return (
-    <Menubar>
-      <MenubarMenu>
-        <MenubarTrigger className="bg-transparent">
-          {user.username}
-        </MenubarTrigger>
-        <MenubarContent>
-          <MenubarItem onClick={handleLogOut}>Logout</MenubarItem>
-        </MenubarContent>
-      </MenubarMenu>
-    </Menubar>
+    <div>
+      {userInfo?.username && (
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger className="bg-transparent">
+              {userInfo.username}
+            </MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem onClick={handleLogOut}>Logout</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
+      )}
+    </div>
   );
 }

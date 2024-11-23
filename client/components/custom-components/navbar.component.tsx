@@ -1,6 +1,10 @@
 import Link from "next/link";
 import ProfileInfoButton from "./profile-info.button";
-import ThemeChangerButton from "./theme-changer.button";
+import dynamic from "next/dynamic";
+
+const ThemeChangerButton = dynamic(() => import("./theme-changer.button"), {
+  ssr: false
+});
 
 export default function Navbar() {
   return (
@@ -11,7 +15,7 @@ export default function Navbar() {
             Chat App
           </Link>
         </div>
-        <div className="flex flex-wrap items-center justify-end">
+        <div className="flex flex-wrap items-center justify-end min-h-10">
           <ProfileInfoButton />
           <ThemeChangerButton />
         </div>

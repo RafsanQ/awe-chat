@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config";
-import { useContext, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { AuthContext } from "./util/auth-context-provider";
+import { useState } from "react";
+import { setCookie } from "cookies-next";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -28,16 +27,8 @@ const formSchema = z.object({
 });
 
 export default function LoginForm() {
-  const router = useRouter();
   const { toast } = useToast();
   const [loadingState, setLoadingState] = useState(false);
-  const { authenticated } = useContext(AuthContext);
-
-  useEffect(() => {
-    if (authenticated) {
-      router.replace("/dashboard");
-    }
-  }, [authenticated, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,8 +39,8 @@ export default function LoginForm() {
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    setLoadingState(true);
     try {
-      setLoadingState(true);
       const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
@@ -80,23 +71,40 @@ export default function LoginForm() {
             username: user.username
           })
         );
-        setLoadingState(false);
-        return router.push("/dashboard");
+        setCookie("jwt", user.token, {
+          domain: "localhost",
+          secure: true,
+          sameSite: "strict",
+          path: "/"
+        });
+        window.location.replace("/chat");
+      } else if ([400, 401, 403, 404].includes(res.status)) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Invalid username or password",
+          duration: 3000
+        });
       } else {
-        const resData = await res.json();
-        throw new Error(resData.error || "Could not Login");
+        toast({
+          variant: "destructive",
+          title: "Oh no! Something went wrong",
+          description: "The server ran into an error",
+          duration: 3000
+        });
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast({
           variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-          description: error.message,
+          title: "Could not connect to the server",
+          description:
+            error.message + ". Please check your internet connection",
           duration: 2000
         });
       }
-      setLoadingState(false);
     }
+    setLoadingState(false);
   };
   return (
     <Form {...form}>

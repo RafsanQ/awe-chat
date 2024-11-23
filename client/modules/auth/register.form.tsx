@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/config";
-import { useContext, useEffect, useState } from "react";
+import { useState } from "react";
 import AsyncButton from "@/components/custom-components/async-button";
-import { AuthContext } from "./util/auth-context-provider";
 
 const formSchema = z
   .object({
@@ -47,13 +46,7 @@ export default function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [loadingState, setLoadingState] = useState(false);
-  const { authenticated } = useContext(AuthContext);
 
-  useEffect(() => {
-    if (authenticated) {
-      router.replace("/dashboard");
-    }
-  }, [authenticated, router]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -62,8 +55,8 @@ export default function RegisterForm() {
     }
   });
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    setLoadingState(true);
     try {
-      setLoadingState(true);
       const res = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: {
@@ -82,22 +75,40 @@ export default function RegisterForm() {
           duration: 3000
         });
         router.push("/login");
+      } else if (res.status === 409) {
+        toast({
+          variant: "destructive",
+          title: "Conflict Error  ",
+          description: "That email is already being used by another user",
+          duration: 3000
+        });
+      } else if ([400, 401, 403, 404].includes(res.status)) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Invalid username or password",
+          duration: 3000
+        });
       } else {
-        const resData = await res.json();
-        throw new Error(resData.error || "Could not register the new User");
+        toast({
+          variant: "destructive",
+          title: "Oh no! Something went wrong",
+          description: "The server ran into an error",
+          duration: 3000
+        });
       }
-      setLoadingState(false);
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast({
           variant: "destructive",
-          title: "Uh oh! Something went wrong.",
-          description: error.message,
+          title: "Could not connect to the server",
+          description:
+            error.message + ". Please check your internet connection",
           duration: 2000
         });
       }
-      setLoadingState(false);
     }
+    setLoadingState(false);
   };
   return (
     <Form {...form}>

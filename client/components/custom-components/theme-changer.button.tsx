@@ -6,11 +6,12 @@ import { useTheme } from "next-themes";
 export default function ThemeChangerButton() {
   const { theme, setTheme } = useTheme();
   const handleThemeChange = () => {
-    setTheme(theme === "light" ? "dark" : "light");
+    setTheme(theme == "light" ? "dark" : "light");
   };
+
   return (
     <Button variant="ghost" onClick={handleThemeChange}>
-      {theme === "light" ? <MoonIcon /> : <SunIcon />}
+      {theme == "light" ? <MoonIcon /> : <SunIcon />}
     </Button>
   );
 }
