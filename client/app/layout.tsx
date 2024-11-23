@@ -37,7 +37,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col h-screen">
+          <div className="flex flex-col max-h-screen">
             <Navbar />
             {children}
             <Toaster />

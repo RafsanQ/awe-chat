@@ -1,13 +1,24 @@
-import { Card } from "@/components/ui/card";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup
+} from "@/components/ui/resizable";
+import SidebarComponent from "@/modules/sidebar";
 
-export default function DashboardLayout({
+export default function ChatLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex flex-row flex-grow justify-center items-center">
-      <Card className="text-center min-w-96">{children}</Card>
+    <div>
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel defaultSize={20}>
+          <SidebarComponent />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel>{children}</ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

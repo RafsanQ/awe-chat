@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request: NextRequest) {
-  console.log({ cookies: request.cookies });
   // Check if the user is authenticated using a cookie
   const jwtCookie = request.cookies.get("jwt");
   if (!jwtCookie?.value) {
