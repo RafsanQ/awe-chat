@@ -49,7 +49,7 @@ func (q *Queries) CreateChat(ctx context.Context) (Chat, error) {
 
 const createChatAccess = `-- name: CreateChatAccess :one
 INSERT INTO chat_accesses (chat_id, user_email) VALUES ($1, $2)
-RETURNING chat_id, user_email
+RETURNING chat_id, user_email, last_message_time, last_message_id
 `
 
 type CreateChatAccessParams struct {
@@ -60,7 +60,12 @@ type CreateChatAccessParams struct {
 func (q *Queries) CreateChatAccess(ctx context.Context, arg CreateChatAccessParams) (ChatAccess, error) {
 	row := q.db.QueryRow(ctx, createChatAccess, arg.ChatID, arg.UserEmail)
 	var i ChatAccess
-	err := row.Scan(&i.ChatID, &i.UserEmail)
+	err := row.Scan(
+		&i.ChatID,
+		&i.UserEmail,
+		&i.LastMessageTime,
+		&i.LastMessageID,
+	)
 	return i, err
 }
 
@@ -103,25 +108,51 @@ const deleteMessage = `-- name: DeleteMessage :exec
 DELETE FROM messages WHERE id = $1
 `
 
-func (q *Queries) DeleteMessage(ctx context.Context, id int64) error {
+func (q *Queries) DeleteMessage(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteMessage, id)
 	return err
 }
 
-const getChatAccessesByEmail = `-- name: GetChatAccessesByEmail :many
-SELECT chat_id, user_email FROM chat_accesses WHERE user_email = $1
+const getChatAccessesByEmailWithSearchString = `-- name: GetChatAccessesByEmailWithSearchString :many
+SELECT chat_accesses.chat_id, users.email, users.username, chat_accesses.last_message_time, messages.content
+FROM chat_accesses
+    JOIN users ON chat_accesses.user_email = users.email
+    JOIN messages ON chat_accesses.last_message_id = messages.id
+WHERE chat_id IN (SELECT chat_id FROM chat_accesses WHERE chat_accesses.user_email = $1)
+    AND chat_accesses.user_email <> $1
+    AND (users.email LIKE $2 OR users.username LIKE $2)
+ORDER BY chat_accesses.last_message_time DESC
 `
 
-func (q *Queries) GetChatAccessesByEmail(ctx context.Context, userEmail string) ([]ChatAccess, error) {
-	rows, err := q.db.Query(ctx, getChatAccessesByEmail, userEmail)
+type GetChatAccessesByEmailWithSearchStringParams struct {
+	UserEmail string `json:"user_email"`
+	Email     string `json:"email"`
+}
+
+type GetChatAccessesByEmailWithSearchStringRow struct {
+	ChatID          pgtype.UUID      `json:"chat_id"`
+	Email           string           `json:"email"`
+	Username        string           `json:"username"`
+	LastMessageTime pgtype.Timestamp `json:"last_message_time"`
+	Content         string           `json:"content"`
+}
+
+func (q *Queries) GetChatAccessesByEmailWithSearchString(ctx context.Context, arg GetChatAccessesByEmailWithSearchStringParams) ([]GetChatAccessesByEmailWithSearchStringRow, error) {
+	rows, err := q.db.Query(ctx, getChatAccessesByEmailWithSearchString, arg.UserEmail, arg.Email)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChatAccess
+	var items []GetChatAccessesByEmailWithSearchStringRow
 	for rows.Next() {
-		var i ChatAccess
-		if err := rows.Scan(&i.ChatID, &i.UserEmail); err != nil {
+		var i GetChatAccessesByEmailWithSearchStringRow
+		if err := rows.Scan(
+			&i.ChatID,
+			&i.Email,
+			&i.Username,
+			&i.LastMessageTime,
+			&i.Content,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -141,6 +172,49 @@ func (q *Queries) GetChatById(ctx context.Context, id pgtype.UUID) (Chat, error)
 	var i Chat
 	err := row.Scan(&i.ID, &i.AdminEmail, &i.IsGroupChat)
 	return i, err
+}
+
+const getChatsByEmail = `-- name: GetChatsByEmail :many
+SELECT chat_id, user_email, last_message_time, last_message_id, id, admin_email, is_group_chat FROM chat_accesses JOIN chats ON chats.id = chat_accesses.chat_id
+WHERE user_email = $1 ORDER BY chat_accesses.last_message_time DESC
+`
+
+type GetChatsByEmailRow struct {
+	ChatID          pgtype.UUID      `json:"chat_id"`
+	UserEmail       string           `json:"user_email"`
+	LastMessageTime pgtype.Timestamp `json:"last_message_time"`
+	LastMessageID   pgtype.UUID      `json:"last_message_id"`
+	ID              pgtype.UUID      `json:"id"`
+	AdminEmail      pgtype.Text      `json:"admin_email"`
+	IsGroupChat     bool             `json:"is_group_chat"`
+}
+
+func (q *Queries) GetChatsByEmail(ctx context.Context, userEmail string) ([]GetChatsByEmailRow, error) {
+	rows, err := q.db.Query(ctx, getChatsByEmail, userEmail)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetChatsByEmailRow
+	for rows.Next() {
+		var i GetChatsByEmailRow
+		if err := rows.Scan(
+			&i.ChatID,
+			&i.UserEmail,
+			&i.LastMessageTime,
+			&i.LastMessageID,
+			&i.ID,
+			&i.AdminEmail,
+			&i.IsGroupChat,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getMessagesByChatId = `-- name: GetMessagesByChatId :many

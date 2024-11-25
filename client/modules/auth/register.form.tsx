@@ -74,7 +74,7 @@ export default function RegisterForm() {
           description: "New User has been registered.",
           duration: 3000
         });
-        router.push("/login");
+        router.push("/auth/login");
       } else if (res.status === 409) {
         toast({
           variant: "destructive",

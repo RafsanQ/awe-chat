@@ -38,6 +38,10 @@ func (server *Server) createUser(ctx *gin.Context) {
 		Password: hashedPassword,
 	}
 
+	if _, err := server.database.Queries.GetUserByEmail(ctx, arg.Email); err == nil {
+		ctx.JSON(http.StatusConflict, errorResponse(errors.New("email already exists")))
+		return
+	}
 	user, err := server.database.Queries.CreateUser(ctx, arg)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
@@ -113,13 +117,13 @@ func (server *Server) logout(ctx *gin.Context) {
 }
 
 type friendConnectionRequest struct {
-	FriendEmail string `json:"friend_email" binding:"required,email"`
-	UserEmail   string `json:"user_email" binding:"required,email"`
+	FriendEmail string `form:"friend_email" binding:"required,email"`
+	UserEmail   string `form:"user_email" binding:"required,email"`
 }
 
 func (server *Server) requestFriendConnection(ctx *gin.Context) {
 	var req friendConnectionRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -141,19 +145,23 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 		return err
 	})
 
-	g.Go(func() (err error) {
-		res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
-			UserEmailFrom: req.UserEmail,
-			UserEmailTo:   req.FriendEmail,
-		})
-		if len(res) > 0 {
-			return errors.New("Friend connection already exists")
-		}
-		return nil
-	})
-
 	if err := g.Wait(); err != nil {
 		ctx.JSON(http.StatusNotFound, errorResponse(err))
+		return
+	}
+
+	res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+		UserEmailFrom: req.UserEmail,
+		UserEmailTo:   req.FriendEmail,
+	})
+	if len(res) > 0 {
+		if res[0].Confirmed {
+			ctx.JSON(http.StatusConflict, errorResponse(errors.New("Already a friend")))
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "Friend Request Already Sent",
+		})
 		return
 	}
 
@@ -198,7 +206,7 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 
 func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	var req friendConnectionRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindQuery(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
@@ -260,6 +268,31 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		UserEmailTo:   req.FriendEmail,
 	})
 
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	newChatRoom, err := qtx.CreateChat(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	_, err = qtx.CreateChatAccess(ctx, db.CreateChatAccessParams{
+		ChatID:    newChatRoom.ID,
+		UserEmail: req.UserEmail,
+	})
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	_, err = qtx.CreateChatAccess(ctx, db.CreateChatAccessParams{
+		ChatID:    newChatRoom.ID,
+		UserEmail: req.FriendEmail,
+	})
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
