@@ -51,6 +51,8 @@ func NewServer(config *util.Config) (*Server, error) {
 	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
 	authRoutes.GET("/accept-friend-request", server.acceptFriendConnection)
 
+	authRoutes.GET("/chats", server.getChatsAccessesByEmail)
+
 	server.router = router
 	return server, nil
 }

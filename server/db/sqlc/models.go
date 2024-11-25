@@ -18,7 +18,6 @@ type ChatAccess struct {
 	ChatID          pgtype.UUID      `json:"chat_id"`
 	UserEmail       string           `json:"user_email"`
 	LastMessageTime pgtype.Timestamp `json:"last_message_time"`
-	LastMessageID   pgtype.UUID      `json:"last_message_id"`
 }
 
 type FriendConnection struct {

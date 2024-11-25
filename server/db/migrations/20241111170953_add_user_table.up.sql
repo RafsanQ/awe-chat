@@ -7,8 +7,7 @@ CREATE TABLE "users" (
 CREATE TABLE "chat_accesses" (
   "chat_id" uuid NOT NULL,
   "user_email" varchar NOT NULL,
-  "last_message_time" timestamp NOT NULL DEFAULT (now()),
-  "last_message_id" uuid
+  "last_message_time" timestamp NOT NULL DEFAULT (now())
 );
 
 CREATE TABLE "friend_connections" (
@@ -43,11 +42,12 @@ ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id"
 
 ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("user_email") REFERENCES "users" ("email");
 
-ALTER TABLE "chat_accesses" ADD FOREIGN KEY ("last_message_id") REFERENCES "messages" ("id");
-
 ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_from") REFERENCES "users" ("email");
 
 ALTER TABLE "friend_connections" ADD FOREIGN KEY ("user_email_to") REFERENCES "users" ("email");
 
 ALTER TABLE "chats" ADD FOREIGN KEY ("admin_email") REFERENCES "users" ("email");
 
+ALTER TABLE "messages" ADD FOREIGN KEY ("chat_id") REFERENCES "chats" ("id");
+
+ALTER TABLE "messages" ADD FOREIGN KEY ("sender_email") REFERENCES "users" ("email");
