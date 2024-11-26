@@ -1,7 +1,15 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useEffect, useState } from "react";
+import {
+  NavigationMenu,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuLink
+} from "@radix-ui/react-navigation-menu";
+import { useState } from "react";
 
 // interface ChatAccesses {
 //   chatId: string;
@@ -20,7 +28,6 @@ import { useEffect, useState } from "react";
 export default function SidebarComponent() {
   const [searchString, setSearchString] = useState("");
   //   const [chatAccesses, setChatAccesses] = useState<ChatAccesses[]>([]);
-
   return (
     <div className="p-4">
       <div className="flex flex-row">

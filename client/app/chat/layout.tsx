@@ -1,9 +1,9 @@
+import SidebarComponent from "@/modules/sidebar";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup
 } from "@/components/ui/resizable";
-import SidebarComponent from "@/modules/sidebar";
 
 export default function ChatLayout({
   children
