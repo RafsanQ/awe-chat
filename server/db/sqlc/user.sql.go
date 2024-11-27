@@ -94,6 +94,36 @@ func (q *Queries) GetFriendConnections(ctx context.Context, arg GetFriendConnect
 	return items, nil
 }
 
+const getPendingFriendRequests = `-- name: GetPendingFriendRequests :many
+SELECT users.email, users.username FROM friend_connections JOIN users ON users.email = friend_connections.user_email_to
+WHERE user_email_to = $1 AND confirmed = FALSE
+`
+
+type GetPendingFriendRequestsRow struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) GetPendingFriendRequests(ctx context.Context, userEmailTo string) ([]GetPendingFriendRequestsRow, error) {
+	rows, err := q.db.Query(ctx, getPendingFriendRequests, userEmailTo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPendingFriendRequestsRow
+	for rows.Next() {
+		var i GetPendingFriendRequestsRow
+		if err := rows.Scan(&i.Email, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT email, username, password FROM users WHERE email = $1 LIMIT 1
 `

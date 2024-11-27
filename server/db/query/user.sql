@@ -20,3 +20,7 @@ DELETE FROM friend_connections WHERE user_email_from = $1 AND user_email_to = $2
 
 -- name: GetFriendConnections :many
 SELECT * FROM friend_connections WHERE (user_email_from = $1 AND user_email_to = $2) OR (user_email_from = $2 AND user_email_to = $1);
+
+-- name: GetPendingFriendRequests :many
+SELECT users.email, users.username FROM friend_connections JOIN users ON users.email = friend_connections.user_email_to
+WHERE user_email_to = $1 AND confirmed = FALSE;
