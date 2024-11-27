@@ -10,6 +10,7 @@ import {
 import { deleteCookie } from "cookies-next";
 import { useEffect, useState } from "react";
 import NotificationMenuList from "../notification/notification-list.navigation.menuitem";
+import { Bell } from "lucide-react";
 
 export default function ProfileInfoButton() {
   const [userInfo, setUserInfo] = useState<{
@@ -32,7 +33,14 @@ export default function ProfileInfoButton() {
 
   return (
     <NavigationMenu orientation="horizontal">
-      <NotificationMenuList userEmail={userInfo.email} />
+      <NavigationMenuItem>
+        <NavigationMenuTrigger>
+          <Bell />
+          <NavigationMenuContent>
+            <NotificationMenuList userEmail={userInfo.email} />
+          </NavigationMenuContent>
+        </NavigationMenuTrigger>
+      </NavigationMenuItem>
       <NavigationMenuItem>
         <NavigationMenuTrigger>{userInfo.username}</NavigationMenuTrigger>
         <NavigationMenuContent>

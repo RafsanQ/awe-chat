@@ -15,7 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/config";
 import { useState } from "react";
-import AsyncButton from "@/components/custom-components/async-button";
+import AsyncButton from "@/modules/core/async-button";
 
 const formSchema = z
   .object({
