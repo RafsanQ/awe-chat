@@ -34,7 +34,7 @@ func NewServer(config *util.Config) (*Server, error) {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{config.ClientAddress},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
-		AllowHeaders:     []string{"Content-Type"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -51,6 +51,7 @@ func NewServer(config *util.Config) (*Server, error) {
 	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
 	authRoutes.GET("/accept-friend-request", server.acceptFriendConnection)
 	authRoutes.GET("/friend-requests", server.getPendingFriendRequests)
+	authRoutes.GET("/search/users", server.searchUsers)
 
 	authRoutes.GET("/chats", server.getChatsAccessesByEmail)
 

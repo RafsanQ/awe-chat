@@ -5,6 +5,7 @@ import (
 	"net/http"
 	db "server/db/sqlc"
 	"server/util"
+	"sort"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -113,4 +114,96 @@ func (server *Server) login(ctx *gin.Context) {
 func (server *Server) logout(ctx *gin.Context) {
 	ctx.SetCookie("jwt", "", -1, "", "", false, true)
 	ctx.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+type searchUsersRequest struct {
+	UserEmail    string `form:"user_email" binding:"required,email"`
+	SearchString string `form:"search_string" binding:"required"`
+}
+
+type searchUsersResponse struct {
+	db.SearchUsersRow
+	IsFriend bool `json:"is_friend"`
+}
+
+func deleteEmptyUserResponse(res []searchUsersResponse) []searchUsersResponse {
+	var r []searchUsersResponse
+	for _, userTuple := range res {
+		if userTuple.SearchUsersRow.Email != "" {
+			r = append(r, userTuple)
+		}
+	}
+	return r
+}
+
+func (server *Server) searchUsers(ctx *gin.Context) {
+	var req searchUsersRequest
+
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	_, err := server.database.Queries.GetUserByEmail(ctx, req.UserEmail)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, errorResponse(err))
+		return
+	}
+
+	users, err := server.database.Queries.SearchUsers(ctx, db.SearchUsersParams{
+		Email:        req.UserEmail,
+		SearchString: "%%" + req.SearchString + "%%",
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	if len(users) == 0 {
+		ctx.JSON(http.StatusNoContent, gin.H{})
+		return
+	}
+
+	ch := make(chan searchUsersResponse)
+
+	for i, user := range users {
+		go func(i int, user db.SearchUsersRow) {
+			friendConnection, err := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+				UserEmailFrom: req.UserEmail,
+				UserEmailTo:   user.Email,
+			})
+
+			if err != nil {
+				ch <- searchUsersResponse{}
+				return
+			}
+			var isFriend bool
+			if len(friendConnection) > 0 {
+				isFriend = true
+			} else {
+				isFriend = false
+			}
+
+			ch <- searchUsersResponse{
+				IsFriend:       isFriend,
+				SearchUsersRow: user,
+			}
+		}(i, user)
+	}
+
+	res := make([]searchUsersResponse, len(users))
+
+	for i := range res {
+		res[i] = <-ch
+	}
+
+	// The ones with an error had returned an empty response. Filter them out.
+	res = deleteEmptyUserResponse(res)
+
+	// Sort the ones that are not friends yet up top.
+	sort.Slice(res, func(i, j int) bool {
+		return res[j].IsFriend
+	})
+
+	ctx.JSON(http.StatusOK, res)
 }

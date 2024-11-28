@@ -148,3 +148,39 @@ func (q *Queries) RequestFriendConnection(ctx context.Context, arg RequestFriend
 	_, err := q.db.Exec(ctx, requestFriendConnection, arg.UserEmailFrom, arg.UserEmailTo)
 	return err
 }
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT email, username FROM users
+WHERE (email ILIKE $2 OR username ILIKE $2) AND email <> $1
+LIMIT 100
+`
+
+type SearchUsersParams struct {
+	Email        string `json:"email"`
+	SearchString string `json:"search_string"`
+}
+
+type SearchUsersRow struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error) {
+	rows, err := q.db.Query(ctx, searchUsers, arg.Email, arg.SearchString)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchUsersRow
+	for rows.Next() {
+		var i SearchUsersRow
+		if err := rows.Scan(&i.Email, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
