@@ -11,14 +11,12 @@ export default function ChatLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div>
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel defaultSize={20}>
-          <SidebarComponent />
-        </ResizablePanel>
-        <ResizableHandle />
-        <ResizablePanel>{children}</ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+    <ResizablePanelGroup direction="horizontal">
+      <ResizablePanel defaultSize={20}>
+        <SidebarComponent />
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel>{children}</ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

@@ -1,14 +1,13 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuTrigger
-} from "@/components/ui/navigation-menu";
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarTrigger
+} from "@/components/ui/menubar";
 
-import NotificationMenuList from "../notification/notification-list.navigation.menuitem";
-import { Bell } from "lucide-react";
+import NotificationMenuList from "./notification-list.navigation.menuitem";
 import { logout, getProfileInfo } from "@/modules/auth/util";
 
 export default function ProfileInfoButton() {
@@ -18,25 +17,18 @@ export default function ProfileInfoButton() {
   }
 
   return (
-    <NavigationMenu orientation="horizontal">
-      <NavigationMenuItem>
-        <NavigationMenuTrigger>
-          <Bell />
-          <NavigationMenuContent>
-            <NotificationMenuList userEmail={userInfo.email} />
-          </NavigationMenuContent>
-        </NavigationMenuTrigger>
-      </NavigationMenuItem>
-      <NavigationMenuItem>
-        <NavigationMenuTrigger>{userInfo.username}</NavigationMenuTrigger>
-        <NavigationMenuContent>
-          <NavigationMenuItem>
-            <Button variant="ghost" onClick={logout}>
-              Logout
-            </Button>
-          </NavigationMenuItem>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-    </NavigationMenu>
+    <Menubar>
+      <NotificationMenuList />
+      <MenubarMenu>
+        <MenubarTrigger className="cursor-pointer">
+          {userInfo.username}
+        </MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem className="cursor-pointer" onClick={logout}>
+            Logout
+          </MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+    </Menubar>
   );
 }
