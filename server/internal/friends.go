@@ -197,5 +197,9 @@ func (server *Server) getPendingFriendRequests(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, res)
+	if len(res) == 0 {
+		ctx.JSON(http.StatusOK, gin.H{"pendingFriendRequests": []int{}})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"pendingFriendRequests": res})
 }

@@ -160,7 +160,9 @@ func (server *Server) searchUsers(ctx *gin.Context) {
 	}
 
 	if len(users) == 0 {
-		ctx.JSON(http.StatusNoContent, gin.H{})
+		ctx.JSON(http.StatusOK, gin.H{
+			"users": []int{},
+		})
 		return
 	}
 
@@ -205,5 +207,7 @@ func (server *Server) searchUsers(ctx *gin.Context) {
 		return res[j].IsFriend
 	})
 
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, gin.H{
+		"users": res,
+	})
 }

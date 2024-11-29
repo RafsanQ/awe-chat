@@ -51,7 +51,7 @@ func NewServer(config *util.Config) (*Server, error) {
 	authRoutes.GET("/send-friend-request", server.requestFriendConnection)
 	authRoutes.GET("/accept-friend-request", server.acceptFriendConnection)
 	authRoutes.GET("/friend-requests", server.getPendingFriendRequests)
-	authRoutes.GET("/search/users", server.searchUsers)
+	authRoutes.GET("/users/search", server.searchUsers)
 
 	authRoutes.GET("/chats", server.getChatsAccessesByEmail)
 

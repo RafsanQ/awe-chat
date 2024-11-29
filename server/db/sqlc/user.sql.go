@@ -95,7 +95,7 @@ func (q *Queries) GetFriendConnections(ctx context.Context, arg GetFriendConnect
 }
 
 const getPendingFriendRequests = `-- name: GetPendingFriendRequests :many
-SELECT users.email, users.username FROM friend_connections JOIN users ON users.email = friend_connections.user_email_to
+SELECT users.email, users.username FROM friend_connections JOIN users ON users.email = friend_connections.user_email_from
 WHERE user_email_to = $1 AND confirmed = FALSE
 `
 
