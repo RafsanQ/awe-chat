@@ -1,15 +1,16 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-  NavigationMenuLink
-} from "@radix-ui/react-navigation-menu";
+import { Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
+const AddUserSheetComponent = dynamic(
+  () => import("./add-user.sheet.component"),
+  {
+    ssr: false,
+    loading: () => <Loader2 className="animate-spin" />
+  }
+);
 
 // interface ChatAccesses {
 //   chatId: string;
@@ -27,66 +28,17 @@ import { useState } from "react";
 
 export default function SidebarComponent() {
   const [searchString, setSearchString] = useState("");
-  //   const [chatAccesses, setChatAccesses] = useState<ChatAccesses[]>([]);
   return (
     <div className="p-4">
-      <div className="flex flex-row">
+      <div className="flex flex-row gap-2">
         <Input
           placeholder="Search"
           value={searchString}
           onChange={(event) => setSearchString(event.target.value)}
         />
+        <AddUserSheetComponent />
       </div>
-      <ScrollArea className="h-screen rounded-md p-4">
-        Jokester began sneaking into the castle in the middle of the night and
-        leaving jokes all over the place: under the king's pillow, in his soup,
-        even in the royal toilet. The king was furious, but he couldn't seem to
-        stop Jokester. And then, one day, the people of the kingdom discovered
-        that the jokes left by Jokester were so funny that they couldn't help
-        but laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop. Jokester
-        began sneaking into the castle in the middle of the night and leaving
-        jokes all over the place: under the king's pillow, in his soup, even in
-        the royal toilet. The king was furious, but he couldn't seem to stop
-        Jokester. And then, one day, the people of the kingdom discovered that
-        the jokes left by Jokester were so funny that they couldn't help but
-        laugh. And once they started laughing, they couldn't stop.
-      </ScrollArea>
+      <ScrollArea className="h-screen rounded-md p-2"></ScrollArea>
     </div>
   );
 }

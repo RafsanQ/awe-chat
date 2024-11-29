@@ -1,32 +1,18 @@
 import { API_URL } from "@/config";
 import { getCookie } from "cookies-next";
-import useSWR, { Fetcher } from "swr";
 
-const fetcher: Fetcher<
-  {
-    username: string;
-    user_email: string;
-  }[],
-  string
-> = (path: string) =>
-  fetch(`${API_URL}/${path}`, {
-    method: "GET",
-    headers: {
-      Authorization: `${getCookie("jwt")}`
-    }
-  }).then((r) => r.json());
 interface Props {
   userEmail: string;
 }
 export default function NotificationMenuList(props: Props) {
-  const getFriendRequestsResult = useSWR(
-    `friend-requests?user_email${props.userEmail}`,
-    fetcher
-  );
+  // const getFriendRequestsResult = useSWR(
+  //   `friend-requests?user_email${props.userEmail}`,
+  //   fetcher
+  // );
 
   return (
     <div>
-      {getFriendRequestsResult.error && (
+      {/* {getFriendRequestsResult.error && (
         <div>Error {String(getFriendRequestsResult.error)}</div>
       )}
       {getFriendRequestsResult.isLoading && <div>Loading...</div>}
@@ -40,7 +26,7 @@ export default function NotificationMenuList(props: Props) {
         </ul>
       ) : (
         <div>No Data</div>
-      )}
+      )} */}
     </div>
   );
 }

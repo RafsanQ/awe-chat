@@ -112,7 +112,7 @@ export default function RegisterForm() {
   };
   return (
     <Form {...form}>
-      <form className="space-y-8" onSubmit={form.handleSubmit(handleSubmit)}>
+      <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
           name="email"
@@ -165,8 +165,9 @@ export default function RegisterForm() {
             </FormItem>
           )}
         />
-
-        <AsyncButton isLoading={loadingState} type="submit" text="Register" />
+        <AsyncButton isLoading={loadingState} type="submit">
+          Register
+        </AsyncButton>
       </form>
     </Form>
   );

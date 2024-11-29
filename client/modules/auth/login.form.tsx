@@ -15,7 +15,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { API_URL } from "@/config";
 import { useState } from "react";
-import { setCookie } from "cookies-next";
+import { login } from "./util";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -58,26 +58,13 @@ export default function LoginForm() {
           description: "Logged in.",
           duration: 3000
         });
-        const user: {
-          token: string;
+        const userInfo: {
           email: string;
           username: string;
+          token: string;
         } = await res.json();
 
-        sessionStorage.setItem(
-          "user_info",
-          JSON.stringify({
-            email: user.email,
-            username: user.username
-          })
-        );
-        setCookie("jwt", user.token, {
-          domain: "localhost",
-          secure: true,
-          sameSite: "strict",
-          path: "/"
-        });
-        window.location.replace("/chat");
+        login(userInfo);
       } else if ([400, 401, 403, 404].includes(res.status)) {
         toast({
           variant: "destructive",
@@ -135,7 +122,9 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <AsyncButton isLoading={loadingState} type="submit" text="Login" />
+        <AsyncButton isLoading={loadingState} type="submit">
+          Log in
+        </AsyncButton>
       </form>
     </Form>
   );

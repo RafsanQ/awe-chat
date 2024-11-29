@@ -7,27 +7,13 @@ import {
   NavigationMenuTrigger
 } from "@/components/ui/navigation-menu";
 
-import { deleteCookie } from "cookies-next";
-import { useEffect, useState } from "react";
 import NotificationMenuList from "../notification/notification-list.navigation.menuitem";
 import { Bell } from "lucide-react";
+import { logout, getProfileInfo } from "@/modules/auth/util";
 
 export default function ProfileInfoButton() {
-  const [userInfo, setUserInfo] = useState<{
-    username: string;
-    email: string;
-  } | null>(null);
-  const handleLogOut = () => {
-    sessionStorage.removeItem("user_info");
-    deleteCookie("jwt");
-    window.location.replace("/auth/login");
-  };
-
-  useEffect(() => {
-    setUserInfo(JSON.parse(sessionStorage.getItem("user_info") || "{}"));
-  }, []);
-
-  if (!userInfo?.username || !userInfo?.email) {
+  const userInfo = getProfileInfo();
+  if (!userInfo) {
     return <></>;
   }
 
@@ -45,7 +31,7 @@ export default function ProfileInfoButton() {
         <NavigationMenuTrigger>{userInfo.username}</NavigationMenuTrigger>
         <NavigationMenuContent>
           <NavigationMenuItem>
-            <Button variant="ghost" onClick={handleLogOut}>
+            <Button variant="ghost" onClick={logout}>
               Logout
             </Button>
           </NavigationMenuItem>
