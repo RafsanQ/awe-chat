@@ -26,7 +26,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getProfileInfo, logout } from "@/modules/auth/util";
 import UserSearchLoadingComponent from "./user-search-loading.component";
-import { searchUsers, SearchedUser, sendFriendRequest } from "./actions";
+import { searchUsers, SearchedUser, sendFriendRequest } from "@/lib/actions";
 
 const formSchema = z.object({
   searchString: z.string().min(4, {
@@ -80,7 +80,6 @@ export default function AddUserSheetComponent() {
           });
         }
       } else if (users) {
-        console.log({ users });
         setData(users);
       }
     } catch (error) {
@@ -196,7 +195,7 @@ export default function AddUserSheetComponent() {
               {data.map((userInfo) => (
                 <div
                   key={userInfo.email}
-                  className=" flex items-center space-x-4 rounded-md border p-4"
+                  className="flex items-center space-x-4 rounded-md border p-4"
                 >
                   <div className="flex-1 space-y-2">
                     <p className="text-sm font-medium leading-none m-y-2">
