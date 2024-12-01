@@ -31,7 +31,9 @@ type Message struct {
 	ChatID      pgtype.UUID      `json:"chat_id"`
 	Content     string           `json:"content"`
 	SenderEmail string           `json:"sender_email"`
+	IsRemoved   bool             `json:"is_removed"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	ReadAt      pgtype.Timestamp `json:"read_at"`
 }
 
 type User struct {

@@ -13,7 +13,7 @@ import (
 
 const addMessage = `-- name: AddMessage :one
 INSERT INTO messages (chat_id, sender_email, content) VALUES ($1, $2, $3)
-RETURNING id, chat_id, content, sender_email, created_at
+RETURNING id, chat_id, content, sender_email, is_removed, created_at, read_at
 `
 
 type AddMessageParams struct {
@@ -30,7 +30,9 @@ func (q *Queries) AddMessage(ctx context.Context, arg AddMessageParams) (Message
 		&i.ChatID,
 		&i.Content,
 		&i.SenderEmail,
+		&i.IsRemoved,
 		&i.CreatedAt,
+		&i.ReadAt,
 	)
 	return i, err
 }
@@ -210,7 +212,7 @@ func (q *Queries) GetChatById(ctx context.Context, id pgtype.UUID) (Chat, error)
 }
 
 const getMessagesByChatId = `-- name: GetMessagesByChatId :many
-SELECT id, chat_id, content, sender_email, created_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC
+SELECT id, chat_id, content, sender_email, is_removed, created_at, read_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC
 `
 
 func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) ([]Message, error) {
@@ -227,7 +229,9 @@ func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) (
 			&i.ChatID,
 			&i.Content,
 			&i.SenderEmail,
+			&i.IsRemoved,
 			&i.CreatedAt,
+			&i.ReadAt,
 		); err != nil {
 			return nil, err
 		}
