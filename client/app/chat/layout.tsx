@@ -12,11 +12,15 @@ export default function ChatLayout({
 }>) {
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel defaultSize={20}>
+      <ResizablePanel defaultSize={20} minSize={15}>
         <SidebarComponent />
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel defaultSize={80}>{children}</ResizablePanel>
+      <ResizablePanel defaultSize={80}>
+        <div className="h-screen text-center flex flex-col items-center justify-center">
+          {children}
+        </div>
+      </ResizablePanel>
     </ResizablePanelGroup>
   );
 }

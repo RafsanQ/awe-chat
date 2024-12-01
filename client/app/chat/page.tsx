@@ -1,11 +1,30 @@
-"use client";
-import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { APP_DESCRIPTION, APP_NAME } from "@/config";
+import ChatScreenComponent from "@/modules/chat";
 
-export default function ChatPage({}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const searchParams = useSearchParams();
+export default function ChatPage({
+  searchParams
+}: {
+  searchParams?: { [key: string]: string };
+}) {
+  let chatId = null;
+  if (searchParams) chatId = searchParams["chat_id"] || null;
 
-  const chatId = searchParams.get("chat_id");
-  return <h2>This is the Chat Page for chat id: {chatId}</h2>;
+  if (!chatId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{APP_NAME}</CardTitle>
+          <CardDescription>{APP_DESCRIPTION}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return <ChatScreenComponent chatId={chatId} />;
 }

@@ -7,6 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Chat, getChatAccesses } from "@/lib/actions";
 import { Loader2, Frown } from "lucide-react";
 import { logout } from "@/modules/auth/util";
+import dayjs from "dayjs";
+import { getTimeDifferenceFromNow } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 const AddUserSheetComponent = dynamic(
   () => import("./add-user.sheet.component"),
@@ -17,6 +20,7 @@ const AddUserSheetComponent = dynamic(
 );
 
 export default function SidebarComponent() {
+  const router = useRouter();
   const [searchString, setSearchString] = useState("");
 
   const { toast } = useToast();
@@ -27,6 +31,7 @@ export default function SidebarComponent() {
 
   const handleSelect = (chatId: string) => {
     setSelectedChatId(chatId);
+    router.push("/chat/?chat_id=" + chatId);
   };
 
   useEffect(() => {
@@ -99,7 +104,7 @@ export default function SidebarComponent() {
             {data.map((chatTuple) => (
               <div
                 key={chatTuple.chat_id}
-                className={`flex items-left space-x-4 rounded-md p-4 my-2 ${
+                className={`flex items-left space-x-4 rounded-md p-4 my-2 cursor-pointer ${
                   chatTuple.chat_id === selectedChatId ? "border" : ""
                 }`}
                 onClick={() => handleSelect(chatTuple.chat_id)}
@@ -108,9 +113,16 @@ export default function SidebarComponent() {
                   <p className="text-sm font-medium leading-none m-y-2">
                     {chatTuple.username}
                   </p>
-                  <p className="text-sm text-muted-foreground m-y-2">
-                    {chatTuple.email}
-                  </p>
+                  <div className="flex flex-row justify-between">
+                    <p className="text-sm text-muted-foreground m-y-2">
+                      {chatTuple.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground m-y-2">
+                      {getTimeDifferenceFromNow(
+                        dayjs(chatTuple.last_message_time)
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
