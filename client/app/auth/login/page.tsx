@@ -1,10 +1,10 @@
 import LoginForm from "@/modules/auth/login.form";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 export default function SignInRoute() {
   return (
-    <>
+    <Card className="text-center min-w-96">
       <CardHeader>
         <CardTitle>Log In</CardTitle>
       </CardHeader>
@@ -20,6 +20,6 @@ export default function SignInRoute() {
           </Link>
         </p>
       </CardContent>
-    </>
+    </Card>
   );
 }

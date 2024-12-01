@@ -73,7 +73,6 @@ export default function NotificationMenuList() {
       try {
         const { pendingFriendRequests, error } =
           await getPendingFriendRequests();
-        console.log({ pendingFriendRequests, error });
         if (error) {
           if ([401, 403].includes(error.status)) {
             toast({

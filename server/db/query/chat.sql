@@ -29,7 +29,8 @@ FROM chat_accesses
     JOIN users ON chat_accesses.user_email = users.email
 WHERE chat_accesses.chat_id IN (SELECT chat_accesses.chat_id FROM chat_accesses WHERE chat_accesses.user_email = $1)
     AND chat_accesses.user_email <> $1
-ORDER BY chat_accesses.last_message_time DESC;
+ORDER BY chat_accesses.last_message_time DESC
+LIMIT 100;
 
 -- name: GetChatAccessesByEmailWithSearchString :many
 SELECT chat_accesses.chat_id, users.email, users.username, chat_accesses.last_message_time
@@ -38,7 +39,8 @@ FROM chat_accesses
 WHERE chat_accesses.chat_id IN (SELECT chat_accesses.chat_id FROM chat_accesses WHERE chat_accesses.user_email = $1)
     AND chat_accesses.user_email <> $1
     AND (users.email ILIKE $2 OR users.username ILIKE $2)
-ORDER BY chat_accesses.last_message_time DESC;
+ORDER BY chat_accesses.last_message_time DESC
+LIMIT 100;
 
 
 -- name: AddMessage :one

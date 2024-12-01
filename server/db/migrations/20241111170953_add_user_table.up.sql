@@ -27,7 +27,9 @@ CREATE TABLE "messages" (
   "chat_id" uuid NOT NULL,
   "content" text NOT NULL,
   "sender_email" varchar NOT NULL,
-  "created_at" timestamp NOT NULL
+  "is_removed" bool NOT NULL DEFAULT false,
+  "created_at" timestamp NOT NULL,
+  "read_at" timestamp
 );
 
 CREATE INDEX ON "chat_accesses" ("user_email");

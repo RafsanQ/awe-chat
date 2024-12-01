@@ -129,3 +129,41 @@ export const acceptFriendRequest = async (friendEmail: string) => {
     };
   }
 };
+
+export interface Chat {
+  chat_id: string;
+  email: string;
+  username: string;
+  last_message_time: string;
+}
+
+export const getChatAccesses = async (searchString?: string) => {
+  const email = cookies().get("user_email")?.value;
+  const res = await fetch(
+    `${API_URL}/chats?user_email=${email}&search_string=${searchString}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `${cookies().get("jwt")?.value}`,
+        "Content-Type": "application/json"
+      },
+      cache: "force-cache",
+      next: {
+        tags: ["chats", "user-friends"]
+      }
+    }
+  );
+  if (res.ok) {
+    let { chatAccesses }: { chatAccesses: Chat[] } = await res.json();
+    if (chatAccesses == null) chatAccesses = [];
+    return { chatAccesses, error: null };
+  } else {
+    return {
+      chatAccesses: [],
+      error: {
+        message: "Failed to fetch pending friend requests. " + res.statusText,
+        status: res.status
+      }
+    };
+  }
+};

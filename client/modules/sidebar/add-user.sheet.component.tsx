@@ -24,7 +24,7 @@ import AsyncButton from "../core/async-button";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getProfileInfo, logout } from "@/modules/auth/util";
+import { logout } from "@/modules/auth/util";
 import UserSearchLoadingComponent from "./user-search-loading.component";
 import { searchUsers, SearchedUser, sendFriendRequest } from "@/lib/actions";
 
@@ -35,7 +35,7 @@ const formSchema = z.object({
 });
 
 export default function AddUserSheetComponent() {
-  const userInfo = getProfileInfo();
+  const { toast } = useToast();
   const searchBarForm = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,13 +43,8 @@ export default function AddUserSheetComponent() {
     }
   });
 
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<SearchedUser[]>([]);
-
-  if (!userInfo) {
-    return;
-  }
 
   const handleSearch = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);

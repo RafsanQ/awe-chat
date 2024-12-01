@@ -46,5 +46,4 @@ func (server *Server) getChatsAccessesByEmail(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusOK, gin.H{"chat_accesses": chatAccesses})
 	}
-
 }

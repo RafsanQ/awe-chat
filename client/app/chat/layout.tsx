@@ -16,7 +16,7 @@ export default function ChatLayout({
         <SidebarComponent />
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel>{children}</ResizablePanel>
+      <ResizablePanel defaultSize={80}>{children}</ResizablePanel>
     </ResizablePanelGroup>
   );
 }

@@ -1,10 +1,10 @@
-import { CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card,CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import RegisterForm from "@/modules/auth/register.form";
 import Link from "next/link";
 
 export default function SignUpRoute() {
   return (
-    <>
+    <Card className="text-center min-w-96">
       <CardHeader>
         <CardTitle>Register</CardTitle>
       </CardHeader>
@@ -20,6 +20,6 @@ export default function SignUpRoute() {
           </Link>
         </p>
       </CardContent>
-    </>
+    </Card>
   );
 }
