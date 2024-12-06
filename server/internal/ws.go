@@ -2,6 +2,7 @@ package internal
 
 import (
 	"net/http"
+	"time"
 
 	database "server/database"
 	db "server/database/sqlc"
@@ -11,12 +12,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type Message struct {
+	ID          string    `json:"id"`
+	ChatID      string    `json:"chat_id"`
+	Content     string    `json:"content"`
+	SenderEmail string    `json:"sender_email"`
+	IsRemoved   bool      `json:"is_removed"`
+	CreatedAt   time.Time `json:"created_at"`
+	ReadAt      time.Time `json:"read_at"`
+}
+
 type Client struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	ChatId   string `json:"chat_id"`
 	Conn     *websocket.Conn
-	Message  chan *db.Message
+	Message  chan *Message
 }
 
 type ChatRoom struct {
@@ -28,7 +39,7 @@ type Hub struct {
 	Rooms      map[string]*ChatRoom
 	Register   chan *Client
 	Unregister chan *Client
-	Broadcast  chan *db.Message
+	Broadcast  chan *Message
 }
 
 func NewHub() *Hub {
@@ -36,7 +47,7 @@ func NewHub() *Hub {
 		Rooms:      make(map[string]*ChatRoom),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
-		Broadcast:  make(chan *db.Message, 5),
+		Broadcast:  make(chan *Message, 5),
 	}
 }
 
@@ -44,10 +55,42 @@ func (hub *Hub) Run() {
 	for {
 		select {
 		case client := <-hub.Register:
+			if _, ok := hub.Rooms[client.ChatId]; ok {
+				room := hub.Rooms[client.ChatId]
+				if _, ok := room.Clients[client.Email]; !ok {
+					room.Clients[client.Email] = client
+				}
+			} else {
+				// Create a new room
+			}
 
 		case client := <-hub.Unregister:
+			if _, ok := hub.Rooms[client.ChatId]; ok {
+				room := hub.Rooms[client.ChatId]
+				if _, ok := room.Clients[client.Email]; ok {
+
+					// Broadcast message saying client has left the room
+					if len(room.Clients) > 0 {
+						hub.Broadcast <- &Message{
+							Content:     "User has left the chat",
+							ChatID:      client.ChatId,
+							SenderEmail: client.Email,
+							CreatedAt:   time.Now(),
+						}
+					}
+
+					delete(room.Clients, client.Email)
+					close(client.Message)
+				}
+			}
 
 		case message := <-hub.Broadcast:
+			roomId := message.ChatID
+			if _, ok := hub.Rooms[roomId]; ok {
+				for _, client := range hub.Rooms[roomId].Clients {
+					client.Message <- message
+				}
+			}
 		}
 	}
 }
@@ -112,7 +155,7 @@ func (webSocketHandler *WebSocketHandler) JoinRoom(c *gin.Context) {
 
 	client := &Client{
 		Conn:     conn,
-		Message:  make(chan *db.Message, 10),
+		Message:  make(chan *Message, 10),
 		ChatId:   req.ChatId,
 		Email:    user.Email,
 		Username: user.Username,
