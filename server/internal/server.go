@@ -3,7 +3,7 @@ package internal
 import (
 	"context"
 	"log"
-	"server/db"
+	db "server/database"
 	"server/util"
 	"time"
 
@@ -12,9 +12,10 @@ import (
 )
 
 type Server struct {
-	database *db.Database
-	router   *gin.Engine
-	config   *util.Config
+	database         *db.Database
+	router           *gin.Engine
+	webSocketHandler *WebSocketHandler
+	config           *util.Config
 }
 
 func NewServer(config *util.Config) (*Server, error) {
@@ -56,6 +57,10 @@ func NewServer(config *util.Config) (*Server, error) {
 	authRoutes.GET("/chats", server.getChatsAccessesByEmail)
 
 	server.router = router
+
+	//Add a Web Socket handler
+	server.webSocketHandler = CreateWebSocketHandler(config, database)
+
 	return server, nil
 }
 

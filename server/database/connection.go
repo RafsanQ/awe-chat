@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"log"
-	db "server/db/sqlc"
+	db "server/database/sqlc"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"

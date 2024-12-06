@@ -2,7 +2,7 @@ package internal
 
 import (
 	"net/http"
-	db "server/db/sqlc"
+	database "server/database/sqlc"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -36,7 +36,7 @@ func (server *Server) getChatsAccessesByEmail(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusOK, gin.H{"chatAccesses": chatAccesses})
 	} else {
-		chatAccesses, err := server.database.Queries.GetChatAccessesByEmailWithSearchString(ctx, db.GetChatAccessesByEmailWithSearchStringParams{
+		chatAccesses, err := server.database.Queries.GetChatAccessesByEmailWithSearchString(ctx, database.GetChatAccessesByEmailWithSearchStringParams{
 			UserEmail: req.UserEmail,
 			Email:     "%%" + req.SearchString + "%%",
 		})

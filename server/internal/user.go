@@ -3,7 +3,7 @@ package internal
 import (
 	"errors"
 	"net/http"
-	db "server/db/sqlc"
+	db "server/database/sqlc"
 	"server/util"
 	"sort"
 	"time"

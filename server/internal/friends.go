@@ -3,7 +3,7 @@ package internal
 import (
 	"errors"
 	"net/http"
-	db "server/db/sqlc"
+	database "server/database/sqlc"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
@@ -43,7 +43,7 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+	res, _ := server.database.Queries.GetFriendConnections(ctx, database.GetFriendConnectionsParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
 	})
@@ -58,7 +58,7 @@ func (server *Server) requestFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	err := server.database.Queries.RequestFriendConnection(ctx, db.RequestFriendConnectionParams{
+	err := server.database.Queries.RequestFriendConnection(ctx, database.RequestFriendConnectionParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
 	})
@@ -97,7 +97,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	})
 
 	g.Go(func() (err error) {
-		res, _ := server.database.Queries.GetFriendConnections(ctx, db.GetFriendConnectionsParams{
+		res, _ := server.database.Queries.GetFriendConnections(ctx, database.GetFriendConnectionsParams{
 			UserEmailFrom: req.FriendEmail,
 			UserEmailTo:   req.UserEmail,
 		})
@@ -121,7 +121,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 	defer tx.Rollback(ctx)
 
 	qtx := server.database.Queries.WithTx(tx)
-	err = qtx.ConfirmFriendConnection(ctx, db.ConfirmFriendConnectionParams{
+	err = qtx.ConfirmFriendConnection(ctx, database.ConfirmFriendConnectionParams{
 		UserEmailFrom: req.FriendEmail,
 		UserEmailTo:   req.UserEmail,
 	})
@@ -131,7 +131,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	err = qtx.RequestFriendConnection(ctx, db.RequestFriendConnectionParams{
+	err = qtx.RequestFriendConnection(ctx, database.RequestFriendConnectionParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
 	})
@@ -141,7 +141,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	err = qtx.ConfirmFriendConnection(ctx, db.ConfirmFriendConnectionParams{
+	err = qtx.ConfirmFriendConnection(ctx, database.ConfirmFriendConnectionParams{
 		UserEmailFrom: req.UserEmail,
 		UserEmailTo:   req.FriendEmail,
 	})
@@ -152,7 +152,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	_, err = qtx.CreateChatAccess(ctx, db.CreateChatAccessParams{
+	_, err = qtx.CreateChatAccess(ctx, database.CreateChatAccessParams{
 		ChatID:    newChatRoom.ID,
 		UserEmail: req.UserEmail,
 	})
@@ -162,7 +162,7 @@ func (server *Server) acceptFriendConnection(ctx *gin.Context) {
 		return
 	}
 
-	_, err = qtx.CreateChatAccess(ctx, db.CreateChatAccessParams{
+	_, err = qtx.CreateChatAccess(ctx, database.CreateChatAccessParams{
 		ChatID:    newChatRoom.ID,
 		UserEmail: req.FriendEmail,
 	})
