@@ -11,10 +11,10 @@ dropdb:
 	docker exec -it chat-app dropdb chat-app
 
 migrateup:
-	 migrate -path db/migrations -database "postgresql://root:9cd4c26428@localhost:5433/chat-app?sslmode=disable" -verbose up
+	 migrate -path database/migrations -database "postgresql://root:9cd4c26428@localhost:5433/chat-app?sslmode=disable" -verbose up
 
 migratedown:
-	 migrate -path db/migrations -database "postgresql://root:9cd4c26428@localhost:5433/chat-app?sslmode=disable" -verbose down
+	 migrate -path database/migrations -database "postgresql://root:9cd4c26428@localhost:5433/chat-app?sslmode=disable" -verbose down
 
 dev:
 	go run .\cmd\main.go
