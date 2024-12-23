@@ -93,7 +93,7 @@ export default function ChatScreenComponent(props: Props) {
               key={message.id}
               className={`p-2 flex justify-${
                 message.senderEmail === userEmail ? "end" : "start"
-              }`}
+              } text-${message.senderEmail === userEmail ? "right" : "left"}`}
             >
               <ContextMenu>
                 <div>
