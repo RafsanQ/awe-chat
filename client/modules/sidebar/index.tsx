@@ -94,7 +94,7 @@ export default function SidebarComponent() {
         />
         <AddUserSheetComponent />
       </div>
-      <ScrollArea className="h-screen rounded-md px-1 py-4">
+      <ScrollArea className="h-full rounded-md px-1 py-4">
         {isLoading ? (
           <div className="w-full h-1/2 flex flex-col justify-center gap-2 text-slate-700 dark:text-slate-500 items-center">
             <Loader2 className="animate-spin" />

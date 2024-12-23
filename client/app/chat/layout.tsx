@@ -17,7 +17,7 @@ export default function ChatLayout({
       </ResizablePanel>
       <ResizableHandle />
       <ResizablePanel defaultSize={80}>
-        <div className="h-screen text-center flex flex-col items-center justify-center">
+        <div className="h-full w-full text-center flex flex-col items-center justify-center">
           {children}
         </div>
       </ResizablePanel>

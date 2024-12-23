@@ -13,8 +13,8 @@ const ProfileInfoButton = dynamic(() => import("./profile-info.button"), {
 
 export default function Navbar() {
   return (
-    <div className="bg-secondary border-border">
-      <div className="flex flex-wrap items-center justify-between mx-auto p-4">
+    <div className="bg-secondary border-border flex-1">
+      <div className="flex items-center justify-between mx-auto p-4">
         <div className="flex flex-wrap items-center justify-end cursor-pointer">
           <Link className="tracking-wide font-semibold" href="/">
             Chat App

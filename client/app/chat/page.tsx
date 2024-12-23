@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import {
   Card,
   CardDescription,
@@ -5,7 +6,11 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { APP_DESCRIPTION, APP_NAME } from "@/config";
-import ChatScreenComponent from "@/modules/chat";
+import { Loader2 } from "lucide-react";
+const ChatScreenComponent = dynamic(() => import("@/modules/chat"), {
+  ssr: false,
+  loading: () => <Loader2 className="animate-spin" />
+});
 
 export default function ChatPage({
   searchParams

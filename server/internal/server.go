@@ -12,10 +12,9 @@ import (
 )
 
 type Server struct {
-	database         *db.Database
-	router           *gin.Engine
-	webSocketHandler *WebSocketHandler
-	config           *util.Config
+	database *db.Database
+	router   *gin.Engine
+	config   *util.Config
 }
 
 func NewServer(config *util.Config) (*Server, error) {
@@ -58,8 +57,9 @@ func NewServer(config *util.Config) (*Server, error) {
 
 	server.router = router
 
-	//Add a Web Socket handler
-	server.webSocketHandler = CreateWebSocketHandler(config, database)
+	// Add a Web Socket handler
+	webSocketManager := NewWebSocketManager(server)
+	router.GET("/ws", webSocketManager.serveWebSocket)
 
 	return server, nil
 }
