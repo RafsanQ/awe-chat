@@ -2,28 +2,42 @@
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { WEB_SOCKET_URL } from "@/config";
 import { ScrollArea } from "@/components/ui/scroll-area";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   ContextMenu,
-//   ContextMenuContent,
-//   ContextMenuItem,
-//   ContextMenuTrigger
-// } from "@/components/ui/context-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger
+} from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useRef, useState } from "react";
+import { logout } from "../auth/util";
+import { getTimeDifferenceFromNow } from "@/lib/utils";
+import dayjs from "dayjs";
 
 interface Props {
   chatId: string;
 }
 
+interface Message {
+  id: string;
+  content: string;
+  senderEmail: string;
+  senderUsername: string;
+  createdAt: dayjs.Dayjs;
+  isRemoved: boolean;
+}
+
+const isValidMessage = (message: unknown): message is Message => {
+  return true;
+};
+
 export default function ChatScreenComponent(props: Props) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [messageHistory, setMessageHistory] = useState<MessageEvent<string>[]>(
-    []
-  );
-  const { sendMessage, lastMessage, readyState } = useWebSocket(
+  const [newMessageText, setNewMessageText] = useState("");
+  const [messageHistory, setMessageHistory] = useState<Message[]>([]);
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     WEB_SOCKET_URL,
     {
       onOpen: () => console.log("opened"),
@@ -40,41 +54,68 @@ export default function ChatScreenComponent(props: Props) {
     [ReadyState.UNINSTANTIATED]: "Uninstantiated"
   }[readyState];
 
-  const handleClickSendMessage = () => {
-    sendMessage(newMessage);
-    setNewMessage("");
-  };
-
   useEffect(() => {
-    if (lastMessage !== null) {
-      console.log({ lastMessage });
-      setMessageHistory((prev) => prev.concat(lastMessage));
+    console.log({ lastJsonMessage });
+    if (lastJsonMessage != null && isValidMessage(lastJsonMessage)) {
+      console.log("valid message!");
+      setMessageHistory((prev) => prev.concat(lastJsonMessage));
     }
-  }, [lastMessage]);
+  }, [lastJsonMessage]);
+
+  const userEmail = localStorage.getItem("user_email");
+  const username = localStorage.getItem("user_name");
+
+  if (!userEmail || !username) {
+    logout();
+    return <></>;
+  }
+
+  const handleClickSendMessage = () => {
+    const message: Message = {
+      id: props.chatId,
+      content: newMessageText,
+      senderEmail: userEmail,
+      senderUsername: username,
+      createdAt: dayjs(),
+      isRemoved: false
+    };
+    sendJsonMessage(message);
+    setNewMessageText("");
+  };
 
   return (
     <div className="flex flex-col justify-between w-full h-full">
       <ScrollArea className="px-1 py-4 ">
         <div className="flex flex-col" ref={chatContainerRef}>
-          {/* {ar.map((a) => (
-            <ContextMenu key={a}>
-              <ContextMenuTrigger>
-                <Badge>{a}</Badge>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem>Remove Message</ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          ))} */}
           <h3>The websocket is currently {connectionStatus}</h3>
-          {lastMessage ? <span>Last message: {lastMessage.data}</span> : null}
+          {messageHistory.map((message) => (
+            <div
+              key={message.id}
+              className={`p-2 flex justify-${
+                message.senderEmail === userEmail ? "end" : "start"
+              }`}
+            >
+              <ContextMenu>
+                <div>
+                  <Badge className="whitespace-pre-line px-5 w-fit">
+                    <ContextMenuTrigger>{message.content}</ContextMenuTrigger>
+                  </Badge>
+                  <p>{getTimeDifferenceFromNow(message.createdAt)}</p>
+                </div>
+
+                <ContextMenuContent>
+                  <ContextMenuItem>Remove Message</ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
+            </div>
+          ))}
         </div>
       </ScrollArea>
       <div className="flex flex-row w-full gap-2 p-2">
         <Textarea
           placeholder="Type your message here."
-          value={newMessage}
-          onChange={(event) => setNewMessage(event.target.value)}
+          value={newMessageText}
+          onChange={(event) => setNewMessageText(event.target.value)}
           onKeyPress={(event) => {
             if (event.key === "Enter") {
               if (!event.shiftKey) {
