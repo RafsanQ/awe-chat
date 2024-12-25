@@ -22,6 +22,7 @@ interface Props {
 
 interface Message {
   id: string;
+  chatId: string;
   content: string;
   senderEmail: string;
   senderUsername: string;
@@ -30,7 +31,15 @@ interface Message {
 }
 
 const isValidMessage = (message: unknown): message is Message => {
-  return true;
+  return (
+    (message as Message)?.id !== undefined &&
+    (message as Message)?.content !== undefined &&
+    (message as Message)?.chatId !== undefined &&
+    (message as Message)?.senderEmail !== undefined &&
+    (message as Message)?.senderUsername !== undefined &&
+    (message as Message)?.createdAt !== undefined &&
+    (message as Message)?.isRemoved !== undefined
+  );
 };
 
 export default function ChatScreenComponent(props: Props) {
@@ -56,6 +65,7 @@ export default function ChatScreenComponent(props: Props) {
 
   useEffect(() => {
     console.log({ lastJsonMessage });
+    console.log({ isValidMessage: isValidMessage(lastJsonMessage) });
     if (lastJsonMessage != null && isValidMessage(lastJsonMessage)) {
       console.log("valid message!");
       setMessageHistory((prev) => prev.concat(lastJsonMessage));
@@ -73,6 +83,7 @@ export default function ChatScreenComponent(props: Props) {
   const handleClickSendMessage = () => {
     const message: Message = {
       id: props.chatId,
+      chatId: props.chatId,
       content: newMessageText,
       senderEmail: userEmail,
       senderUsername: username,
@@ -100,7 +111,13 @@ export default function ChatScreenComponent(props: Props) {
                   <Badge className="whitespace-pre-line px-5 w-fit">
                     <ContextMenuTrigger>{message.content}</ContextMenuTrigger>
                   </Badge>
-                  <p>{getTimeDifferenceFromNow(message.createdAt)}</p>
+                  <p
+                    className={`text-xs text-${
+                      message.senderEmail === userEmail ? "right" : "left"
+                    }`}
+                  >
+                    {getTimeDifferenceFromNow(message.createdAt)}
+                  </p>
                 </div>
 
                 <ContextMenuContent>
