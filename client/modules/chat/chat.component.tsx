@@ -60,10 +60,10 @@ export default function ChatComponent(props: Props) {
       addLocalMessage(props.lastJsonMessage);
       forceUpdate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.lastJsonMessage, forceUpdate]);
 
   useEffect(() => {
-    console.log("Force Update");
     forceUpdate();
   }, [props.chatId, forceUpdate]);
 
@@ -73,9 +73,9 @@ export default function ChatComponent(props: Props) {
         <div className="flex flex-col" ref={chatContainerRef}>
           {messageLocalHistory.map((message, index) => (
             <div
-              key={message.id+index}
+              key={message.id + index}
               className={`p-2 flex justify-${
-                message.senderEmail === props.userData.userEmail
+                message.senderEmail == props.userData.userEmail
                   ? "end"
                   : "start"
               }`}

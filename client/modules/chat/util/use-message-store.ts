@@ -51,7 +51,6 @@ const useLocalMessageStore = (
   }, []);
 
   useEffect(() => {
-    console.log("Chat ID Changed - detected at local storage");
     const value = window.localStorage.getItem(key);
     setMessageHistory(value ? JSON.parse(value) : initialValue);
   }, [chatId]);

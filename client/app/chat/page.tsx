@@ -14,5 +14,5 @@ export default function ChatPage({
   let chatId = null;
   if (searchParams) chatId = searchParams["chat_id"] || null;
 
-  return <ChatScreenComponent chatId={chatId} />;
+  return <ChatScreenComponent chatId={chatId || undefined} />;
 }

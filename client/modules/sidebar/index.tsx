@@ -9,7 +9,7 @@ import { Loader2, Frown } from "lucide-react";
 import { logout } from "@/modules/auth/util";
 import dayjs from "dayjs";
 import { getTimeDifferenceFromNow } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const AddUserSheetComponent = dynamic(
   () => import("./add-user.sheet.component"),
@@ -21,13 +21,17 @@ const AddUserSheetComponent = dynamic(
 
 export default function SidebarComponent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [searchString, setSearchString] = useState("");
 
   const { toast } = useToast();
 
   const [data, setData] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(
+    searchParams.get("chat_id") ? String(searchParams.get("chat_id")) : null
+  );
 
   const handleSelect = (chatId: string) => {
     setSelectedChatId(chatId);
@@ -105,7 +109,7 @@ export default function SidebarComponent() {
               <div
                 key={chatTuple.chat_id}
                 className={`flex items-left space-x-4 rounded-md p-4 my-2 cursor-pointer ${
-                  chatTuple.chat_id === selectedChatId ? "border" : ""
+                  chatTuple.chat_id == selectedChatId ? "border" : ""
                 }`}
                 onClick={() => handleSelect(chatTuple.chat_id)}
               >
