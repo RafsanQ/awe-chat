@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"server/util"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -29,10 +31,19 @@ func NewClient(conn *websocket.Conn, manager *WebSocketManager) *Client {
 	}
 }
 
+type NewMessage struct {
+	ID             string `json:"id"`
+	ChatID         string `json:"chatId"`
+	Content        string `json:"content"`
+	SenderEmail    string `json:"senderEmail"`
+	SenderUsername string `json:"senderUsername"`
+	CreatedAt      string `json:"createdAt"`
+}
+
 func (client *Client) readMessages() {
 	defer client.manager.removeClient(client)
 	for {
-		messageType, payload, err := client.conn.ReadMessage()
+		_, payload, err := client.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("Error reading from websocket: %v", err)
@@ -40,11 +51,23 @@ func (client *Client) readMessages() {
 			break
 		}
 
-		for currentClient := range client.manager.Clients {
+		var newMessage NewMessage
+		err = json.Unmarshal(payload, &newMessage)
+		if err != nil {
+			log.Println("Error unmarshalling JSON:", err)
+			continue
+		}
+
+		chatRoom, ok := client.manager.ChatRooms[newMessage.ChatID]
+		if !ok {
+			log.Println("Unable to find chat")
+			continue
+		}
+
+		for currentClient := range chatRoom.Clients {
 			currentClient.egress <- payload
 		}
-		log.Println(messageType)
-		log.Println(string(payload))
+
 	}
 }
 
@@ -72,35 +95,72 @@ func (client *Client) writeMessages() {
 	}
 }
 
-type WebSocketManager struct {
-	Server  *Server
+type ChatRoom struct {
+	ChatId  string
 	Clients ClientList
+	manager *WebSocketManager
+}
+
+func NewChatRoom(chatId string, manager *WebSocketManager) *ChatRoom {
+	return &ChatRoom{
+		ChatId:  chatId,
+		Clients: make(ClientList),
+		manager: manager,
+	}
+}
+
+func (room *ChatRoom) addClient(client *Client) {
+	room.Clients[client] = true
+}
+
+func (room *ChatRoom) removeClient(client *Client) {
+	if _, ok := room.Clients[client]; ok {
+		delete(room.Clients, client)
+	}
+}
+
+type ChatRoomList map[string]*ChatRoom
+type WebSocketManager struct {
+	Server           *Server
+	ConnectedClients ClientList
+	ChatRooms        ChatRoomList
 	sync.RWMutex
 }
 
 func NewWebSocketManager(server *Server) *WebSocketManager {
 	return &WebSocketManager{
-		Server:  server,
-		Clients: make(ClientList),
+		Server:           server,
+		ConnectedClients: make(ClientList),
+		ChatRooms:        make(ChatRoomList),
 	}
 }
 
 func (m *WebSocketManager) addClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
-	m.Clients[client] = true
+	m.ConnectedClients[client] = true
 }
 
 func (m *WebSocketManager) removeClient(client *Client) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.Clients[client]; ok {
+	if _, ok := m.ConnectedClients[client]; ok {
 		client.conn.Close()
-		delete(m.Clients, client)
+		delete(m.ConnectedClients, client)
 	}
 }
 
+type serverWebSocketReq struct {
+	UserEmail string `form:"user_email" binding:"required"`
+}
+
 func (m *WebSocketManager) serveWebSocket(ctx *gin.Context) {
+	var req serverWebSocketReq
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
 	// Handle new connections
 	log.Println("New Connection")
 
@@ -122,6 +182,25 @@ func (m *WebSocketManager) serveWebSocket(ctx *gin.Context) {
 
 	client := NewClient(conn, m)
 	m.addClient(client)
+
+	chats, err := m.Server.database.Queries.GetChatAccessesByEmail(ctx, req.UserEmail)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	m.Lock()
+	for _, chat := range chats {
+		chatId := util.UUIDToString(chat.ChatID)
+		chatRoom, ok := m.ChatRooms[chatId]
+		if !ok {
+			m.ChatRooms[chatId] = NewChatRoom(chatId, m)
+			chatRoom = m.ChatRooms[chatId]
+		}
+		chatRoom.addClient(client)
+	}
+	m.Unlock()
 
 	// Start reading and writing goroutines
 	go client.readMessages()
