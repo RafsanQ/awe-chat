@@ -28,7 +28,7 @@ CREATE TABLE "messages" (
   "content" text NOT NULL,
   "sender_email" varchar NOT NULL,
   "is_removed" bool NOT NULL DEFAULT false,
-  "created_at" timestamp NOT NULL,
+  "created_at" timestamp NOT NULL DEFAULT (now()),
   "read_at" timestamp
 );
 

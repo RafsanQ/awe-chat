@@ -1,9 +1,12 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	database "server/database/sqlc"
 	"server/util"
 	"sync"
 
@@ -31,13 +34,10 @@ func NewClient(conn *websocket.Conn, manager *WebSocketManager) *Client {
 	}
 }
 
-type NewMessage struct {
-	ID             string `json:"id"`
-	ChatID         string `json:"chatId"`
-	Content        string `json:"content"`
-	SenderEmail    string `json:"senderEmail"`
-	SenderUsername string `json:"senderUsername"`
-	CreatedAt      string `json:"createdAt"`
+type MessageParams struct {
+	ChatID      string `json:"chatId"`
+	Content     string `json:"content"`
+	SenderEmail string `json:"senderEmail"`
 }
 
 func (client *Client) readMessages() {
@@ -51,21 +51,47 @@ func (client *Client) readMessages() {
 			break
 		}
 
-		var newMessage NewMessage
-		err = json.Unmarshal(payload, &newMessage)
+		var messageParams MessageParams
+		err = json.Unmarshal(payload, &messageParams)
 		if err != nil {
 			log.Println("Error unmarshalling JSON:", err)
 			continue
 		}
 
-		chatRoom, ok := client.manager.ChatRooms[newMessage.ChatID]
+		chatId, err := util.StringToPgUuid(messageParams.ChatID)
+
+		if err != nil {
+			log.Println("Error converting chat ID to UUID:", err)
+			continue
+		}
+
+		chatRoom, ok := client.manager.ChatRooms[messageParams.ChatID]
 		if !ok {
 			log.Println("Unable to find chat")
 			continue
 		}
 
+		newMessage, err := client.manager.Server.database.Queries.AddMessage(context.Background(), database.AddMessageParams{
+			ChatID:      chatId,
+			Content:     messageParams.Content,
+			SenderEmail: messageParams.SenderEmail,
+		})
+
+		if err != nil {
+			log.Println("Error adding message:", err)
+			continue
+		}
+
+		fmt.Println(newMessage)
+
+		newMessageBytes, err := json.Marshal(newMessage)
+		if err != nil {
+			log.Println("Error marshalling new message:", err)
+			continue
+		}
+
 		for currentClient := range chatRoom.Clients {
-			currentClient.egress <- payload
+			currentClient.egress <- newMessageBytes
 		}
 
 	}
@@ -192,7 +218,7 @@ func (m *WebSocketManager) serveWebSocket(ctx *gin.Context) {
 
 	m.Lock()
 	for _, chat := range chats {
-		chatId := util.UUIDToString(chat.ChatID)
+		chatId := util.PgUuidToString(chat.ChatID)
 		chatRoom, ok := m.ChatRooms[chatId]
 		if !ok {
 			m.ChatRooms[chatId] = NewChatRoom(chatId, m)
