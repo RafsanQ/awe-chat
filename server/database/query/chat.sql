@@ -53,3 +53,8 @@ DELETE FROM messages WHERE id = $1;
 -- name: GetMessagesByChatId :many
 SELECT * FROM messages WHERE chat_id = $1 ORDER BY created_at ASC;
 
+-- name: UpdateLastMessageTime :exec
+UPDATE chat_accesses
+SET last_message_time = $2
+WHERE chat_id = $1;
+

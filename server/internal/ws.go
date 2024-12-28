@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	database "server/database/sqlc"
+	dbConnection "server/database"
+	databaseTypes "server/database/sqlc"
 	"server/util"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
@@ -40,6 +42,43 @@ type MessageParams struct {
 	SenderEmail string `json:"senderEmail"`
 }
 
+func addMessageToDb(database *dbConnection.Database, chatId pgtype.UUID, content string, senderEmail string) (*databaseTypes.Message, error) {
+	ctx := context.Background()
+	tx, err := database.GetConnection().Begin(ctx)
+	if err != nil {
+		return &databaseTypes.Message{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	qtx := database.Queries.WithTx(tx)
+
+	newMessage, err := qtx.AddMessage(ctx, databaseTypes.AddMessageParams{
+		ChatID:      chatId,
+		Content:     content,
+		SenderEmail: senderEmail,
+	})
+
+	if err != nil {
+		return &databaseTypes.Message{}, err
+	}
+
+	err = qtx.UpdateLastMessageTime(ctx, databaseTypes.UpdateLastMessageTimeParams{
+		ChatID:          chatId,
+		LastMessageTime: newMessage.CreatedAt,
+	})
+
+	if err != nil {
+		return &databaseTypes.Message{}, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return &databaseTypes.Message{}, err
+	}
+
+	return &newMessage, nil
+}
+
 func (client *Client) readMessages() {
 	defer client.manager.removeClient(client)
 	for {
@@ -58,7 +97,7 @@ func (client *Client) readMessages() {
 			continue
 		}
 
-		chatId, err := util.StringToPgUuid(messageParams.ChatID)
+		chatIdUuid, err := util.StringToPgUuid(messageParams.ChatID)
 
 		if err != nil {
 			log.Println("Error converting chat ID to UUID:", err)
@@ -71,14 +110,9 @@ func (client *Client) readMessages() {
 			continue
 		}
 
-		newMessage, err := client.manager.Server.database.Queries.AddMessage(context.Background(), database.AddMessageParams{
-			ChatID:      chatId,
-			Content:     messageParams.Content,
-			SenderEmail: messageParams.SenderEmail,
-		})
-
+		newMessage, err := addMessageToDb(client.manager.Server.database, chatIdUuid, messageParams.Content, messageParams.SenderEmail)
 		if err != nil {
-			log.Println("Error adding message:", err)
+			log.Println("Error adding message to database:", err)
 			continue
 		}
 

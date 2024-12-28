@@ -258,3 +258,19 @@ func (q *Queries) UpdateChat(ctx context.Context, arg UpdateChatParams) error {
 	_, err := q.db.Exec(ctx, updateChat, arg.ID, arg.AdminEmail, arg.IsGroupChat)
 	return err
 }
+
+const updateLastMessageTime = `-- name: UpdateLastMessageTime :exec
+UPDATE chat_accesses
+SET last_message_time = $2
+WHERE chat_id = $1
+`
+
+type UpdateLastMessageTimeParams struct {
+	ChatID          pgtype.UUID      `json:"chat_id"`
+	LastMessageTime pgtype.Timestamp `json:"last_message_time"`
+}
+
+func (q *Queries) UpdateLastMessageTime(ctx context.Context, arg UpdateLastMessageTimeParams) error {
+	_, err := q.db.Exec(ctx, updateLastMessageTime, arg.ChatID, arg.LastMessageTime)
+	return err
+}

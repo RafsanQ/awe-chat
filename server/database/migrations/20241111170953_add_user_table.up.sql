@@ -32,6 +32,8 @@ CREATE TABLE "messages" (
   "read_at" timestamp
 );
 
+CREATE INDEX ON "chat_accesses" ("chat_id");
+
 CREATE INDEX ON "chat_accesses" ("user_email");
 
 CREATE INDEX ON "chat_accesses" ("last_message_time");

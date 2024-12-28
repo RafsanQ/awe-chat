@@ -1,61 +1,81 @@
-import { useEffect, useState } from "react";
-import { isValidMessage, Message } from "./message";
-
-const keyBase = "messages_chat_app";
+import { useState } from "react";
+import { isValidMessage, MessageType } from "./message-schema";
+import { LOCAL_APP_NAME } from "@/config";
 
 const useLocalMessageStore = (
-  initialValue: Message[],
-  chatId: string,
-  userEmail: string
+  defaultValue: MessageType[],
+  userEmail?: string,
+  initialChatId?: string
 ) => {
-  // Key is the combination of the app name, chatId and the user email
-  const key = `${keyBase}_${chatId}_${userEmail}`;
-
-  const [messageHistory, setMessageHistory] = useState<Message[]>(() => {
-    // Initialize the state
+  const keyBase = LOCAL_APP_NAME + "_" + userEmail;
+  const [currentChatId, setCurrentChatId] = useState(initialChatId);
+  const getMessagesFromLocalStorage = (
+    key: string,
+    newDefaultValue?: MessageType[]
+  ) => {
     try {
+      if (!userEmail || !currentChatId) {
+        return newDefaultValue || defaultValue;
+      }
+
       const value = window.localStorage.getItem(key);
-      console.log({ localStorageValue: value });
+
       // Check if the local storage already has any values,
-      // otherwise initialize it with the passed initialValue
-      return value ? JSON.parse(value) : initialValue;
+      // otherwise initialize it with the passed defaultMessages Value
+      if (value) {
+        const localHistory: MessageType[] = JSON.parse(value);
+        return localHistory || newDefaultValue || defaultValue;
+      }
+      return newDefaultValue || defaultValue;
     } catch (error) {
-      console.log(error);
+      console.error({ error });
+      return newDefaultValue || defaultValue;
     }
+  };
+
+  const [currentChatMessageHistory, setCurrentChatMessageHistory] = useState<
+    MessageType[]
+  >(() => {
+    // Initialize the state
+    const key = keyBase + "_" + currentChatId;
+    return getMessagesFromLocalStorage(key);
   });
 
-  const addMessage = (message: Message): void => {
+  // Add message to the current state or locally if it is a different chat
+  const addMessage = (message: MessageType): void => {
     try {
-      // If the passed value is a callback function,
-      // then call it with the existing state.
       if (isValidMessage(message)) {
-        messageHistory.push(message);
-        setMessageHistory(messageHistory);
+        if (message.chat_id == currentChatId) {
+          setCurrentChatMessageHistory([...currentChatMessageHistory, message]);
+        }
+        const key = keyBase + "_" + message.chat_id;
+        const currentMessageHistory: MessageType[] = JSON.parse(
+          window.localStorage.getItem(key) || "[]"
+        );
+        if (currentMessageHistory) {
+          currentMessageHistory.push(message);
+          window.localStorage.setItem(
+            key,
+            JSON.stringify(currentMessageHistory)
+          );
+        } else {
+          window.localStorage.setItem(key, JSON.stringify([message]));
+        }
       }
     } catch (error) {
       console.log(error);
     }
   };
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      try {
-        console.log("writing to local storage");
-        console.log({ messageHistory: messageHistory });
-        window.localStorage.setItem(key, JSON.stringify(messageHistory));
-      } catch (error) {
-        console.log(error);
-      }
-    }, 10000);
-    return () => clearInterval(intervalId);
-  }, []);
+  const changeChat = (newChatId: string, newInitialValue: MessageType[]) => {
+    const key = keyBase + "_" + newChatId;
+    setCurrentChatId(newChatId);
+    setCurrentChatMessageHistory(
+      getMessagesFromLocalStorage(key, newInitialValue)
+    );
+  };
 
-  useEffect(() => {
-    const value = window.localStorage.getItem(key);
-    setMessageHistory(value ? JSON.parse(value) : initialValue);
-  }, [chatId]);
-
-  return [messageHistory, addMessage] as const;
+  return [currentChatMessageHistory, addMessage, changeChat] as const;
 };
 
 export default useLocalMessageStore;

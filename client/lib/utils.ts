@@ -6,7 +6,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function getTimeDifferenceFromNow(givenTime: dayjs.Dayjs) {
+export function getTimeDifferenceFromNow(givenTimeInput: Date) {
+  const givenTime = dayjs(givenTimeInput);
   const timeBetween = dayjs().diff(givenTime);
 
   const differenceInSeconds = Math.ceil(timeBetween / 1000);
