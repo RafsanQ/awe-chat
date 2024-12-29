@@ -51,7 +51,7 @@ RETURNING *;
 DELETE FROM messages WHERE id = $1;
 
 -- name: GetMessagesByChatId :many
-SELECT * FROM messages WHERE chat_id = $1 ORDER BY created_at ASC;
+SELECT * FROM messages WHERE chat_id = $1 and created_at > sqlc.arg(dateLimit) ORDER BY created_at ASC;
 
 -- name: UpdateLastMessageTime :exec
 UPDATE chat_accesses

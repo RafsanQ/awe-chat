@@ -45,13 +45,10 @@ export default function ChatScreenComponent(props: Props) {
   const [currentMessageHistory, addLocalMessage, changeChat] =
     useLocalMessageStore([], userEmail || undefined, props.chatId);
 
-  console.log({ currentMessageHistory });
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, forceUpdate] = useReducer((x) => x + 1, 0);
 
   useEffect(() => {
-    console.log({ lastJsonMessage });
     if (!isValidMessage(lastJsonMessage)) {
       if (lastJsonMessage !== null && lastJsonMessage !== undefined)
         toast({
@@ -70,7 +67,6 @@ export default function ChatScreenComponent(props: Props) {
   useEffect(() => {
     if (props.chatId) {
       changeChat(props.chatId, []);
-      console.log({ currentMessageHistory });
       forceUpdate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

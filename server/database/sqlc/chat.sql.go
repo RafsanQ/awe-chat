@@ -212,11 +212,16 @@ func (q *Queries) GetChatById(ctx context.Context, id pgtype.UUID) (Chat, error)
 }
 
 const getMessagesByChatId = `-- name: GetMessagesByChatId :many
-SELECT id, chat_id, content, sender_email, is_removed, created_at, read_at FROM messages WHERE chat_id = $1 ORDER BY created_at ASC
+SELECT id, chat_id, content, sender_email, is_removed, created_at, read_at FROM messages WHERE chat_id = $1 and created_at > $2 ORDER BY created_at ASC
 `
 
-func (q *Queries) GetMessagesByChatId(ctx context.Context, chatID pgtype.UUID) ([]Message, error) {
-	rows, err := q.db.Query(ctx, getMessagesByChatId, chatID)
+type GetMessagesByChatIdParams struct {
+	ChatID    pgtype.UUID      `json:"chat_id"`
+	Datelimit pgtype.Timestamp `json:"datelimit"`
+}
+
+func (q *Queries) GetMessagesByChatId(ctx context.Context, arg GetMessagesByChatIdParams) ([]Message, error) {
+	rows, err := q.db.Query(ctx, getMessagesByChatId, arg.ChatID, arg.Datelimit)
 	if err != nil {
 		return nil, err
 	}
