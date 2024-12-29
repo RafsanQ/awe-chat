@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Chat, getChatAccesses } from "@/lib/actions";
 import { Loader2, Frown } from "lucide-react";
 import { logout } from "@/modules/auth/util";
-import dayjs from "dayjs";
 import { getTimeDifferenceFromNow } from "@/lib/utils";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -123,7 +122,7 @@ export default function SidebarComponent() {
                     </p>
                     <p className="text-sm text-muted-foreground m-y-2">
                       {getTimeDifferenceFromNow(
-                        dayjs(chatTuple.last_message_time)
+                        new Date(chatTuple.last_message_time)
                       )}
                     </p>
                   </div>

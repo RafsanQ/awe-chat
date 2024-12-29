@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isValidMessage, MessageType } from "./message-schema";
 import { LOCAL_APP_NAME } from "@/config";
+import { getMessagesFromServer } from "./actions";
 
 const useLocalMessageStore = (
   defaultValue: MessageType[],
@@ -17,7 +18,6 @@ const useLocalMessageStore = (
       if (!userEmail || !currentChatId) {
         return newDefaultValue || defaultValue;
       }
-
       const value = window.localStorage.getItem(key);
 
       // Check if the local storage already has any values,
@@ -74,6 +74,36 @@ const useLocalMessageStore = (
       getMessagesFromLocalStorage(key, newInitialValue)
     );
   };
+
+  const fetchMessagesFromServer = async (chatId: string) => {
+    try {
+      const { messages, error } = await getMessagesFromServer(chatId);
+      if (error) {
+        console.error({ error });
+      } else if (messages.length > 0) {
+        const currentMap = new Map<string, MessageType>();
+        currentChatMessageHistory.forEach((currentMessage) => {
+          currentMap.set(currentMessage.id, currentMessage);
+        });
+        messages.forEach((message) => {
+          currentMap.set(message.id, message);
+        });
+        const newMessageHistory = Array.from(currentMap.values());
+        setCurrentChatMessageHistory(newMessageHistory);
+        const key = keyBase + "_" + currentChatId;
+        window.localStorage.setItem(key, JSON.stringify(newMessageHistory));
+      }
+    } catch (error) {
+      console.error({ error });
+    }
+  };
+
+  useEffect(() => {
+    console.log({ currentChatId });
+    if (currentChatId) {
+      fetchMessagesFromServer(currentChatId);
+    }
+  }, [currentChatId]);
 
   return [currentChatMessageHistory, addMessage, changeChat] as const;
 };
