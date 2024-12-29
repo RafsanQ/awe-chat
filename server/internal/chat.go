@@ -67,10 +67,12 @@ func (server *Server) getMessagesByChatId(ctx *gin.Context) {
 		return
 	}
 
+	diffDays := server.config.MessageTimeDiffInDays
+
 	messages, err := server.database.Queries.GetMessagesByChatId(ctx, database.GetMessagesByChatIdParams{
 		ChatID: chatIdUuid,
 		Datelimit: pgtype.Timestamp{
-			Time:  time.Now(),
+			Time:  time.Now().AddDate(0, 0, -diffDays),
 			Valid: true,
 		},
 	})

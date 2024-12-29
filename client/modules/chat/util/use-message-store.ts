@@ -88,7 +88,13 @@ const useLocalMessageStore = (
         messages.forEach((message) => {
           currentMap.set(message.id, message);
         });
-        const newMessageHistory = Array.from(currentMap.values());
+        const newMessageHistory = Array.from(currentMap.values()).sort(
+          (a, b) => {
+            if (a.created_at < b.created_at) return -1;
+            if (a.created_at > b.created_at) return 1;
+            return 0;
+          }
+        );
         setCurrentChatMessageHistory(newMessageHistory);
         const key = keyBase + "_" + currentChatId;
         window.localStorage.setItem(key, JSON.stringify(newMessageHistory));
