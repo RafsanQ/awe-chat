@@ -12,6 +12,7 @@ This project is my first attempt at using Golang and Next. It uses web-socket co
 -   [Docker](https://www.docker.com/) or [PostgreSQL](https://www.postgresql.org/)
 -   Make
 -   [Migrate](https://github.com/golang-migrate/migrate)
+    <br />
 
 #### Installation
 
@@ -24,11 +25,11 @@ sudo apt install make
 
 For windows, refer to this [discussion](https://stackoverflow.com/questions/32127524/how-to-install-and-use-make-in-windows).
 
-If you still do not wish to install it, refer to `server/Makefile` and simply run the respective commands listed there.
+If you still do not wish to install it, refer to `server/Makefile` and simply run the respective commands listed there. <br />
 
-2. If you do not have go-migrate installed, install it from [here](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate).
+2. If you do not have go-migrate installed, install it from [here](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate). <br />
 
-3. Clone the repository and go inside the server directory.
+3. Clone the repository and go inside the server directory. <br />
 
 ```bash
 cd server
@@ -41,7 +42,7 @@ make postgresinit
 make createdb
 ```
 
-You can also use a standalone PostgreSQL database, however you will need to change the database connection url in the link and run the commands on your own. The Makefile's command `postgresinit` and `createdb` shows how to configure a PostgreSQL database on docker.
+You can also use a standalone PostgreSQL database, however you will need to change the database connection url in the link and run the commands on your own. The Makefile's command `postgresinit` and `createdb` shows how to configure a PostgreSQL database on docker. <br />
 
 5. After setting up the PostgreSQL database, you wll need to setup the database schema. For this you can use the Makefile's command.
 
@@ -49,12 +50,15 @@ You can also use a standalone PostgreSQL database, however you will need to chan
 make migrateup
 ```
 
+ <br />
+
 6. The application's backend server should be ready now. To run it simply use
 
 ```bash
 make dev
 ```
 
+ <br />
 ### Client
 
 #### Prerequisites
@@ -64,12 +68,14 @@ make dev
 
 #### Installation
 
-1. Install Node.js. Download it from [here](https://nodejs.org/en/download). We recommend version 22.
+1. Install Node.js. Download it from [here](https://nodejs.org/en/download). We recommend version 22. <br />
 2. Install a package manager. Pnpm can be downloaded by running
 
 ```bash
 npm install -g @pnpm/exe
 ```
+
+ <br />
 
 3. Install the dependencies using
 
@@ -77,12 +83,15 @@ npm install -g @pnpm/exe
 pnpm install
 ```
 
+ <br />
+
 4. The app should be ready. Run the following command
 
 ```bash
 pnpm dev
 ```
 
+ <br />
 ## Technical Details
 
 ### Technologies
@@ -104,5 +113,6 @@ pnpm dev
 
 ### Database
 
+ <br />
 The database handles user information and text messages. The diagram below illustrates the design.
 ![alt text](./awe-chat-db.png)
