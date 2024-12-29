@@ -3,6 +3,8 @@ package internal
 import (
 	"net/http"
 	database "server/database/sqlc"
+	"server/util"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -46,4 +48,37 @@ func (server *Server) getChatsAccessesByEmail(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusOK, gin.H{"chat_accesses": chatAccesses})
 	}
+}
+
+type GetMessagesByChatIdParams struct {
+	ChatID string `form:"chat_id" binding:"required"`
+}
+
+func (server *Server) getMessagesByChatId(ctx *gin.Context) {
+	var req GetMessagesByChatIdParams
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	chatIdUuid, err := util.StringToPgUuid(req.ChatID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	messages, err := server.database.Queries.GetMessagesByChatId(ctx, database.GetMessagesByChatIdParams{
+		ChatID: chatIdUuid,
+		Datelimit: pgtype.Timestamp{
+			Time:  time.Now(),
+			Valid: true,
+		},
+	})
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"messages": messages})
 }
