@@ -82,3 +82,27 @@ pnpm install
 ```bash
 pnpm dev
 ```
+
+## Technical Details
+
+### Technologies
+
+#### The Front-End Client
+
+-   [Next.js](https://nextjs.org/)
+-   [shadcn/ui](https://ui.shadcn.com/)
+-   [Tailwindcss](https://tailwindcss.com/)
+-   [React useWebSocket](https://www.npmjs.com/package/react-use-websocket) for managing websocket communication.
+-   [Zod](https://zod.dev/) for validating data received from the server.
+
+#### Back-End Server
+
+-   Go
+-   [Gin](https://gin-gonic.com/) web framework.
+-   [Gorilla WebSocket](https://pkg.go.dev/github.com/gorilla/websocket) to write and read messages from the websocket connection.
+-   [sqlc](https://docs.sqlc.dev/en/stable/index.html) to generate type safe interfaces for `SQL` queries.
+
+### Database
+
+The database handles user information and text messages. The diagram below illustrates the design.
+![alt text](./awe-chat-db.png)
